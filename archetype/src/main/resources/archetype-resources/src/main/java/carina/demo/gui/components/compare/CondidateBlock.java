@@ -2,13 +2,13 @@
 #set( $symbol_dollar = '$' )
 #set( $symbol_escape = '\' )
 /*
- * Copyright 2013-2017 QAPROSOFT (http://qaprosoft.com/).
+ * Copyright 2013-2019 QAPROSOFT (http://qaprosoft.com/).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -26,27 +26,23 @@ import org.openqa.selenium.support.FindBy;
 
 import java.util.List;
 
-public class CondidateBlock extends AbstractUIObject
-{
-	@FindBy(xpath = ".//input[contains(@id, 'sSearch')]")
-	private ExtendedWebElement inputField;
+public class CondidateBlock extends AbstractUIObject {
+    @FindBy(xpath = ".//input[contains(@id, 'sSearch')]")
+    private ExtendedWebElement inputField;
 
-	@FindBy(xpath = ".//div[contains(@class, 'autocomplete-search')]//a[not(@class)]")
-	private List<ExtendedWebElement> autocompleteSearchElements;
+    @FindBy(xpath = ".//div[contains(@class, 'autocomplete-search')]//a[not(@class)]")
+    private List<ExtendedWebElement> autocompleteSearchElements;
 
-	public CondidateBlock(WebDriver driver, SearchContext searchContext)
-	{
-		super(driver, searchContext);
-	}
+    public CondidateBlock(WebDriver driver, SearchContext searchContext) {
+        super(driver, searchContext);
+    }
 
-	public void sendKeysToInputField(String text)
-	{
-		click(inputField);
-		type(inputField, text);
-	}
+    public void sendKeysToInputField(String text) {
+        inputField.click();
+        inputField.type(text);
+    }
 
-	public void getFirstPhone()
-	{
-		click(autocompleteSearchElements.get(0));
-	}
+    public void getFirstPhone() {
+        autocompleteSearchElements.get(0).click();
+    }
 }

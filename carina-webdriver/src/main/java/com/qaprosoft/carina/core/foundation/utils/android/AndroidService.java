@@ -1,6 +1,19 @@
+/*******************************************************************************
+ * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.qaprosoft.carina.core.foundation.utils.android;
-
-import static com.qaprosoft.carina.core.foundation.webdriver.DriverPool.getDriver;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,11 +35,12 @@ import com.qaprosoft.carina.core.foundation.utils.R;
 import com.qaprosoft.carina.core.foundation.utils.android.DeviceTimeZone.TimeFormat;
 import com.qaprosoft.carina.core.foundation.utils.android.recorder.utils.AdbExecutor;
 import com.qaprosoft.carina.core.foundation.utils.android.recorder.utils.CmdLine;
+import com.qaprosoft.carina.core.foundation.utils.common.CommonUtils;
 import com.qaprosoft.carina.core.foundation.utils.factory.DeviceType;
+import com.qaprosoft.carina.core.foundation.utils.mobile.MobileUtils;
 import com.qaprosoft.carina.core.foundation.utils.mobile.notifications.android.Notification;
-import com.qaprosoft.carina.core.foundation.webdriver.DriverPool;
+import com.qaprosoft.carina.core.foundation.webdriver.IDriverPool;
 import com.qaprosoft.carina.core.foundation.webdriver.Screenshot;
-import com.qaprosoft.carina.core.foundation.webdriver.device.DevicePool;
 import com.qaprosoft.carina.core.gui.mobile.devices.android.phone.pages.fakegps.FakeGpsPage;
 import com.qaprosoft.carina.core.gui.mobile.devices.android.phone.pages.notifications.NotificationPage;
 import com.qaprosoft.carina.core.gui.mobile.devices.android.phone.pages.settings.DateTimeSettingsPage;
@@ -34,7 +48,7 @@ import com.qaprosoft.carina.core.gui.mobile.devices.android.phone.pages.tzchange
 
 import io.appium.java_client.android.AndroidDriver;
 
-public class AndroidService {
+public class AndroidService implements IDriverPool {
 
     private static final Logger LOGGER = Logger.getLogger(AndroidService.class);
 
@@ -106,12 +120,12 @@ public class AndroidService {
      * @return String command output in one line
      */
     public String executeAdbCommand(String command) {
-        String deviceName = DevicePool.getDevice().getAdbName();
+        String deviceName = IDriverPool.getDefaultDevice().getAdbName();
         if (!deviceName.isEmpty()) {
             // add remoteURL/udid reference
             command = "-s " + deviceName + " " + command;
         } else {
-        	LOGGER.warn("nullDevice detected fot current thread!");
+            LOGGER.warn("nullDevice detected fot current thread!");
         }
 
         String result = "";
@@ -159,14 +173,21 @@ public class AndroidService {
      * @param app String
      */
     public void openApp(String app) {
-        executeAdbCommand("shell am start -n " + app);
+        String result = executeAdbCommand("shell am start -n " + app);
+        if (result.contains("Exception")) {
+            String appPackage = app.split("/")[0];
+            if (!checkCurrentDeviceFocus(appPackage)) {
+                LOGGER.info("Expected app is not in focus. We will try another solution.");
+                executeAdbCommand("shell monkey -p " + appPackage + " -c android.intent.category.LAUNCHER 1");
+            }
+        }
     }
 
     /**
      * clear Apk Cache
      *
      * @param appPackageName for example:
-     * com.bamnetworks.mobile.android.gameday.atbat
+     *            com.bamnetworks.mobile.android.gameday.atbat
      * @return boolean
      */
     public boolean clearApkCache(String appPackageName) {
@@ -212,6 +233,58 @@ public class AndroidService {
     public String getCurrentDeviceFocus() {
         String result = executeAdbCommand("shell dumpsys window windows | grep -E 'mCurrentFocus|mFocusedApp'");
         return result;
+    }
+
+    /**
+     * get Current Focused Apk Package Name
+     *
+     * @return String
+     */
+    public String getCurrentFocusedApkPackageName() {
+        String res = "";
+        String txt = getCurrentDeviceFocus();
+        String regEx1 = ".*?";
+//        String regEx2 = "((?:[a-z][a-z\\.\\d\\-]+)\\.(?:[a-z][a-z\\-]+))(?![\\w\\.])";
+        Pattern pattern1 = Pattern.compile(regEx1 + regEx1, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+        Matcher matcher1 = pattern1.matcher(txt);
+        if (matcher1.find()) {
+            res = matcher1.group(1);
+        }
+        LOGGER.info("Found package name for application in focus : " + res);
+        return res;
+    }
+
+    /**
+     * get Current Focused Apk Details (apkPackage/apkActivity)
+     * 
+     * @return apkPackage/apkActivity to use it in openApp method.
+     */
+    public String getCurrentFocusedApkDetails() {
+        try {
+            String packageName = "";
+            String activityName = "";
+            String txt = getCurrentDeviceFocus();
+            String regEx1 = ".*?";
+            String regEx2 = "((?:[a-z][a-z\\.\\d\\-]+)\\.(?:[a-z][a-z\\-]+))(?![\\w\\.])";
+            Pattern pattern1 = Pattern.compile(regEx1 + regEx2, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            Matcher matcher1 = pattern1.matcher(txt);
+            if (matcher1.find()) {
+                packageName = matcher1.group(1);
+            }
+            LOGGER.info("Found package name for application in focus : " + packageName);
+
+            String regEx3 = "\\/((?:[a-z][a-z\\.\\d\\-]+)\\.(?:[a-z][a-z\\-\\_]+))(?![\\w\\.])";
+            Pattern pattern2 = Pattern.compile(regEx1 + regEx3, Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+            Matcher matcher2 = pattern2.matcher(txt);
+            if (matcher2.find()) {
+                activityName = matcher2.group(1);
+            }
+            LOGGER.info("Found activity name for application in focus : " + activityName);
+            return packageName + "/" + activityName;
+        } catch (Exception e) {
+            LOGGER.error(e);
+            return "";
+        }
     }
 
     /**
@@ -303,7 +376,7 @@ public class AndroidService {
      */
     public List<Notification> getNotifications(boolean withLogger) {
         String[] getNotificationsCmd = null;
-        String deviceName = DevicePool.getDevice().getAdbName();
+        String deviceName = IDriverPool.getDefaultDevice().getAdbName();
         if (!deviceName.isEmpty()) {
             getNotificationsCmd = CmdLine.insertCommandsAfter(baseInitCmd, "-s", deviceName, "shell", "dumpsys", "notification");
         } else {
@@ -392,7 +465,7 @@ public class AndroidService {
         int actual = notificationsCount();
         while (actual <= base && ++time < timeout && !foundText) {
             LOGGER.info("Wait for notification. Second: " + time + ". Actual number:" + actual);
-            pause(1);
+            CommonUtils.pause(1);
             actual = notificationsCount();
             foundText = isNotificationWithTextExist(text);
         }
@@ -436,7 +509,7 @@ public class AndroidService {
         int actual = notificationsCount();
         while (actual <= base && ++time < timeout && !foundText) {
             LOGGER.info("Wait for notification. Second: " + time + ". Actual number:" + actual);
-            pause(1);
+            CommonUtils.pause(1);
             actual = notificationsCount();
             foundText = isNotificationPkgExist(pkg);
         }
@@ -468,8 +541,8 @@ public class AndroidService {
         // open notification
         try {
             ((AndroidDriver) getDriver()).openNotifications();
-            pause(2); // wait while notifications are playing animation to
-                      // appear to avoid missed taps
+            CommonUtils.pause(2); // wait while notifications are playing animation to
+            // appear to avoid missed taps
         } catch (Exception e) {
             LOGGER.error(e);
             LOGGER.info("Using adb to expand Status bar. ");
@@ -598,7 +671,7 @@ public class AndroidService {
      *
      * @param language to set. Can be es, en, etc.
      * @param changeConfig boolean if true - update config locale and language
-     * params
+     *            params
      * @param waitTime int wait in seconds before device refresh.
      * @return boolean
      */
@@ -607,10 +680,10 @@ public class AndroidService {
 
         String initLanguage = language;
 
-        String currentAndroidVersion = DevicePool.getDevice().getOsVersion();
+        String currentAndroidVersion = IDriverPool.getDefaultDevice().getOsVersion();
 
         LOGGER.info("Do not concat language for Android. Keep: " + language);
-        language=language.replace("_","-");
+        language = language.replace("_", "-");
         LOGGER.info("Refactor language to : " + language);
 
         String actualDeviceLanguage = getDeviceLanguage();
@@ -641,7 +714,7 @@ public class AndroidService {
 
         if (waitTime > 0) {
             LOGGER.info("Wait for at least '" + waitTime + "' seconds before device refresh.");
-            pause(waitTime);
+            CommonUtils.pause(waitTime);
         }
 
         if (changeConfig) {
@@ -668,7 +741,7 @@ public class AndroidService {
                 LOGGER.info("Adb return empty response without errors.");
                 status = true;
             } else {
-                currentAndroidVersion = DevicePool.getDevice().getOsVersion();
+                currentAndroidVersion = IDriverPool.getDefaultDevice().getOsVersion();
                 LOGGER.info("currentAndroidVersion=" + currentAndroidVersion);
                 if (currentAndroidVersion.contains("7.")) {
                     LOGGER.info("Adb return language command do not work on some Android 7+ devices." + " Check that there are no error.");
@@ -686,7 +759,7 @@ public class AndroidService {
      */
     public String getDeviceLanguage() {
         String locale = executeAdbCommand("shell getprop persist.sys.language");
-        if(locale.isEmpty()) {
+        if (locale.isEmpty()) {
             locale = executeAdbCommand("shell getprop persist.sys.locale");
         }
         return locale;
@@ -709,7 +782,7 @@ public class AndroidService {
      * startFakeGPS to emulate GPS location
      *
      * @param location String - existing city (for ex. New York)
-     * @param restartApk - if true DriverPool.restartDriver(true);
+     * @param restartApk - if true restartDriver(true);
      * @return boolean return true if everything is ok.
      */
     public boolean setFakeGPSLocation(String location, boolean restartApk) {
@@ -726,17 +799,17 @@ public class AndroidService {
             if (!fakeGpsPage.isOpened(1)) {
                 LOGGER.error("Fake GPS application should be open but wasn't. Force opening.");
                 openApp(activity);
-                pause(2);
+                CommonUtils.pause(2);
             }
             res = fakeGpsPage.locationSearch(location);
             if (res) {
                 LOGGER.info("Set Fake GPS locale: " + location);
-                AndroidUtils.hideKeyboard();
+                MobileUtils.hideKeyboard();
                 fakeGpsPage.clickSetLocation();
             }
             res = true;
             if (restartApk)
-                DriverPool.restartDriver(true);
+                restartDriver(true);
         } catch (Exception e) {
             LOGGER.error("Exception: ", e);
         }
@@ -755,7 +828,7 @@ public class AndroidService {
     /**
      * stopFakeGPS stop using Fake GPS
      *
-     * @param restartApk - if true DriverPool.restartDriver(true);
+     * @param restartApk - if true restartDriver(true);
      * @return boolean
      */
     public boolean stopFakeGPS(boolean restartApk) {
@@ -770,12 +843,12 @@ public class AndroidService {
             if (!fakeGpsPage.isOpened(1)) {
                 LOGGER.error("Fake GPS application should be open but wasn't. Force opening.");
                 openApp(activity);
-                pause(2);
+                CommonUtils.pause(2);
             }
             LOGGER.info("STOP Fake GPS locale");
             res = fakeGpsPage.clickStopFakeGps();
             if (restartApk)
-                DriverPool.restartDriver(true);
+                restartDriver(true);
         } catch (Exception e) {
             LOGGER.error("Exception: ", e);
         }
@@ -809,7 +882,7 @@ public class AndroidService {
         while (!isApkOpened && attemps > 0) {
             LOGGER.info("Apk was not open. Attempt to open...");
             openApp(activity);
-            pause(2);
+            CommonUtils.pause(2);
             isApkOpened = checkCurrentDeviceFocus(packageName);
             attemps--;
         }
@@ -818,7 +891,7 @@ public class AndroidService {
             LOGGER.info("Probably APK was not installed correctly. Try to reinstall.");
             installApk(apkPath, true);
             openApp(activity);
-            pause(2);
+            CommonUtils.pause(2);
         }
 
         if (checkCurrentDeviceFocus(packageName)) {
@@ -839,7 +912,7 @@ public class AndroidService {
      * switchDeviceAutoTimeAndTimeZone
      *
      * @param autoSwitch boolean. If true - auto Time and TimeZone will be set
-     * as On.
+     *            as On.
      */
     public void switchDeviceAutoTimeAndTimeZone(boolean autoSwitch) {
         String value = "0";
@@ -937,7 +1010,7 @@ public class AndroidService {
      * set Device TimeZone by using Apk
      *
      * @param timeZone String required timeZone in Android standard format
-     * (Europe/London)
+     *            (Europe/London)
      * @param timeFormat String 12 or 24
      * @return boolean
      */
@@ -979,9 +1052,10 @@ public class AndroidService {
             return true;
         }
 
-        String currentAndroidVersion = DevicePool.getDevice().getOsVersion();
+        String currentAndroidVersion = IDriverPool.getDefaultDevice().getOsVersion();
         LOGGER.info("currentAndroidVersion=" + currentAndroidVersion);
-        if (currentAndroidVersion.contains("7.") || (DevicePool.getDevice().getDeviceType() == DeviceType.Type.ANDROID_TABLET)) {
+        if (currentAndroidVersion.contains("7.") ||
+                (IDriverPool.getDefaultDevice().getDeviceType() == DeviceType.Type.ANDROID_TABLET && !currentAndroidVersion.contains("8."))) {
             LOGGER.info("TimeZone changing for Android 7+ and tablets works only by TimeZone changer apk.");
             workflow = ChangeTimeZoneWorkflow.APK;
         }
@@ -1011,15 +1085,15 @@ public class AndroidService {
     }
 
     // End of TimeZone change sections
-    
+
     /**
      * Open camera on device
-     */    
+     */
     public void openCamera() {
         LOGGER.info("Camera will be opened");
         executeAdbCommand("shell am start -a android.media.action.IMAGE_CAPTURE");
     }
-    
+
     /**
      * Android camera should be already opened
      */
@@ -1132,10 +1206,11 @@ public class AndroidService {
             openDateTimeSettingsSetupWizard(true, timeFormat);
 
             String res = getCurrentDeviceFocus();
-            if (res.contains("settings.DateTimeSettingsSetupWizard")) {
-                LOGGER.info("On settings.DateTimeSettingsSetupWizard page");
+
+            if (res.contains(".Settings$DateTimeSettingsActivity")) {
+                LOGGER.info("On '.Settings$DateTimeSettingsActivity' page");
             } else {
-                LOGGER.error("Not on settings.DateTimeSettingsSetupWizard page");
+                LOGGER.error("Not on '.Settings$DateTimeSettingsActivity' page");
             }
             DateTimeSettingsPage dtSettingsPage = new DateTimeSettingsPage(getDriver());
             if (!dtSettingsPage.isOpened(3)) {
@@ -1196,7 +1271,7 @@ public class AndroidService {
         String actualTZ = getDeviceActualTimeZone();
         if (isRequiredTimeZone(actualTZ, expectedZone)) {
             LOGGER.info("Required timeZone '" + expectedZone + "' was set by " + workflow.toString() + ". Restarting driver to apply changes.");
-            DriverPool.restartDriver(true);
+            restartDriver(true);
             res = true;
         } else {
             LOGGER.error("TimeZone was not changed by " + workflow.toString() + ". Actual TZ is: " + actualTZ);
@@ -1283,8 +1358,7 @@ public class AndroidService {
         }
 
         setSystemTime(timeFormat);
-
-        openApp("com.android.settings/.DateTimeSettingsSetupWizard");
+        openApp("com.android.settings/.Settings\\$DateTimeSettingsActivity");
     }
 
     /**
@@ -1301,7 +1375,7 @@ public class AndroidService {
         setSystemTime(timeFormat);
 
         openApp(TZ_CHANGE_APP_ACTIVITY);
-        pause(2);
+        CommonUtils.pause(2);
     }
 
     private void setSystemTime(TimeFormat timeFormat) {
@@ -1357,18 +1431,5 @@ public class AndroidService {
     }
 
     // End of TimeZone private section
-
-    /**
-     * Pause
-     *
-     * @param timeout long
-     */
-    private void pause(long timeout) {
-        try {
-            Thread.sleep(timeout * 1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 
 }

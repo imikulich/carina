@@ -1,10 +1,32 @@
+/*******************************************************************************
+ * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.qaprosoft.apitools.validation;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.everit.json.schema.Schema;
+import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.loader.SchemaLoader;
 import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 import org.skyscreamer.jsonassert.JSONAssert;
 import org.skyscreamer.jsonassert.JSONCompareMode;
 
@@ -23,11 +45,28 @@ public class JsonValidator {
 		try {
 			JSONAssert.assertEquals(expectedJson, actualJson, new JsonKeywordsComparator(jsonCompareMode));
 		} catch (JSONException e) {
-			throw new RuntimeException(e);
+			throw new AssertionError(e);
 		}
 	}
 
 	public static void validateJsonAgainstSchema(String jsonSchema, String jsonData) {
+		Matcher m = Pattern.compile("\\d+", Pattern.MULTILINE).matcher(jsonSchema);
+		if (m.find()) {
+			int schemaVersion = Integer.valueOf(m.group());
+			if (schemaVersion <= 4) {
+				LOGGER.info("JSON schema of version below or equal to draft-04 was detected");
+				validateJsonAgainstSchemaV3V4(jsonSchema, jsonData);
+			} else {
+				LOGGER.info("JSON schema of version higher than draft-04 was detected");
+				validateJsonAgainstSchemaV6V7(jsonSchema, jsonData);
+			}
+		} else {
+			LOGGER.warn("JSON schema version can not be detected");
+			validateJsonAgainstSchemaV3V4(jsonSchema, jsonData);
+		}
+	}
+
+	public static void validateJsonAgainstSchemaV3V4(String jsonSchema, String jsonData) {
 		// create the Json nodes for schema and data
 		JsonNode schemaNode;
 		JsonNode data;
@@ -72,7 +111,32 @@ public class JsonValidator {
 				result.append(errorMsg);
 				result.append("\n");
 			}
-			throw new RuntimeException(result.toString());
+			throw new AssertionError(result.toString());
+		}
+	}
+
+	public static void validateJsonAgainstSchemaV6V7(String jsonSchema, String jsonData) {
+		JSONObject rawSchema;
+		try {
+			rawSchema = new JSONObject(new JSONTokener(jsonSchema));
+		} catch (JSONException e) {
+			throw new RuntimeException("Can't parse json schema from file: " + e.getMessage(), e);
+		}
+
+		JSONObject data;
+		try {
+			data = new JSONObject(new JSONTokener(jsonData));
+		} catch (JSONException e) {
+			throw new RuntimeException("Can't parse json data schema from file: " + e.getMessage(), e);
+		}
+
+		Schema schema = SchemaLoader.load(rawSchema);
+		StringBuffer result = new StringBuffer("Validation against Json schema failed: \n");
+		try {
+			schema.validate(data);
+		} catch (ValidationException ex) {
+			ex.getAllMessages().stream().peek(e -> result.append("\n")).forEach(result::append);
+			throw new AssertionError(result.toString());
 		}
 	}
 }

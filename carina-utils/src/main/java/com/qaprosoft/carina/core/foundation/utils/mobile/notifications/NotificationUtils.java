@@ -1,14 +1,28 @@
+/*******************************************************************************
+ * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.qaprosoft.carina.core.foundation.utils.mobile.notifications;
 
 import java.util.Map;
 
-import com.qaprosoft.carina.core.foundation.utils.rest.RestUtil;
 import org.apache.log4j.Logger;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.jayway.restassured.response.Response;
-
+import com.qaprosoft.carina.core.foundation.utils.rest.RestUtil;
 
 public class NotificationUtils {
 
@@ -18,8 +32,8 @@ public class NotificationUtils {
      * call Push Service
      *
      * @param contentType String
-     * @param parameters  Map String, ?
-     * @param url         String
+     * @param parameters Map String, ?
+     * @param url String
      * @return JsonObject
      */
     public static JsonObject callPushService(String contentType, Map<String, ?> parameters, String url) {
@@ -30,8 +44,8 @@ public class NotificationUtils {
      * call Push Service
      *
      * @param contentType String
-     * @param parameters  Map String, ?
-     * @param url         String
+     * @param parameters Map String, ?
+     * @param url String
      * @param responseLog boolean
      * @return JsonObject
      */
@@ -41,7 +55,6 @@ public class NotificationUtils {
             LOGGER.info("Request url: " + url);
 
             Response response = RestUtil.sendHttpPost(contentType, parameters, url.toString(), responseLog);
-
 
             if (response.getStatusCode() == 200) {
                 LOGGER.debug("Call passed with status code '"
@@ -58,17 +71,16 @@ public class NotificationUtils {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("callPushService failure", e);
         }
         return null;
     }
-
 
     /**
      * get Push Service Response
      *
      * @param request String
-     * @param url     String
+     * @param url String
      * @return JsonObject
      */
     public static JsonObject getPushServiceResponse(String request, String url) {
@@ -79,8 +91,8 @@ public class NotificationUtils {
      * get Push Service Response
      *
      * @param contentType String
-     * @param request     String
-     * @param url         String
+     * @param request String
+     * @param url String
      * @param responseLog boolean
      * @return JsonObject
      */
@@ -105,7 +117,7 @@ public class NotificationUtils {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("getPushServiceResponse failure", e);
         }
         return null;
     }
@@ -113,7 +125,7 @@ public class NotificationUtils {
     /**
      * get Get Service Response
      *
-     * @param url     String
+     * @param url String
      * @return JsonObject
      */
     public static JsonObject getGetServiceResponse(String url) {
@@ -124,7 +136,7 @@ public class NotificationUtils {
      * get Get Service Response
      *
      * @param contentType String
-     * @param url         String
+     * @param url String
      * @param responseLog boolean
      * @return JsonObject
      */
@@ -149,7 +161,7 @@ public class NotificationUtils {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            LOGGER.error("getGetServiceResponse failure", e);
         }
         return null;
     }

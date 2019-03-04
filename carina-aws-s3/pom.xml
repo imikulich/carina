@@ -4,7 +4,6 @@
 	xmlns="http://maven.apache.org/POM/4.0.0">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.qaprosoft</groupId>
 	<artifactId>carina-aws-s3</artifactId>
 	<packaging>jar</packaging>
 
@@ -24,8 +23,6 @@
 
 		<source.version>1.8</source.version>
 		<target.version>1.8</target.version>
-		<aws-java-sdk.version>1.10.30</aws-java-sdk.version>
-
 	</properties>
 
 	<dependencies>
@@ -43,13 +40,7 @@
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
-			<version>${aws-java-sdk.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-		</dependency>
-
 
 		<!-- Test utilities -->
 		<dependency>

@@ -2,7 +2,6 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.qaprosoft</groupId>
 	<artifactId>carina-reporting</artifactId>
 	<packaging>jar</packaging>
 	<name>Carina Reporting Module</name>
@@ -48,16 +47,6 @@
 		<dependency>
 			<groupId>com.qaprosoft</groupId>
 			<artifactId>zafira-client</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>junit</groupId>
-					<artifactId>junit</artifactId>
-				</exclusion>
-				<exclusion>
-					<groupId>com.google.guava</groupId>
-					<artifactId>guava</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 
 		<!-- monte-repack video recording -->
@@ -69,6 +58,16 @@
 		<dependency>
 			<groupId>com.googlecode.json-simple</groupId>
 			<artifactId>json-simple</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-logging</groupId>
+			<artifactId>commons-logging</artifactId>
 		</dependency>
 
 	</dependencies>

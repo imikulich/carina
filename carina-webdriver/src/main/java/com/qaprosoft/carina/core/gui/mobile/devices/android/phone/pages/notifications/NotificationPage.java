@@ -1,13 +1,22 @@
+/*******************************************************************************
+ * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *******************************************************************************/
 package com.qaprosoft.carina.core.gui.mobile.devices.android.phone.pages.notifications;
 
-import com.qaprosoft.carina.core.foundation.utils.android.AndroidService;
-import com.qaprosoft.carina.core.foundation.utils.android.AndroidUtils;
-import com.qaprosoft.carina.core.foundation.utils.factory.DeviceType;
-import com.qaprosoft.carina.core.foundation.utils.mobile.notifications.android.Notification;
-import com.qaprosoft.carina.core.foundation.webdriver.decorator.ExtendedWebElement;
-import com.qaprosoft.carina.core.foundation.webdriver.device.DevicePool;
-import com.qaprosoft.carina.core.gui.mobile.devices.MobileAbstractPage;
-import io.appium.java_client.MobileBy;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
@@ -16,7 +25,15 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.FindBy;
 import org.openqa.selenium.support.FindBys;
 
-import java.util.List;
+import com.qaprosoft.carina.core.foundation.utils.android.AndroidService;
+import com.qaprosoft.carina.core.foundation.utils.factory.DeviceType;
+import com.qaprosoft.carina.core.foundation.utils.mobile.MobileUtils;
+import com.qaprosoft.carina.core.foundation.utils.mobile.notifications.android.Notification;
+import com.qaprosoft.carina.core.foundation.webdriver.IDriverPool;
+import com.qaprosoft.carina.core.foundation.webdriver.decorator.ExtendedWebElement;
+import com.qaprosoft.carina.core.gui.mobile.devices.MobileAbstractPage;
+
+import io.appium.java_client.MobileBy;
 
 public class NotificationPage extends MobileAbstractPage {
 
@@ -27,7 +44,6 @@ public class NotificationPage extends MobileAbstractPage {
         notificationService = AndroidService.getInstance();
     }
 
-
     private AndroidService notificationService;
 
     protected static final By NOTIFICATION_XPATH = By
@@ -36,7 +52,6 @@ public class NotificationPage extends MobileAbstractPage {
 
     @FindBy(xpath = "//*[@resource-id = 'com.android.systemui:id/notification_stack_scroller' or @resource-id = 'com.android.systemui:id/latestItems']")
     protected ExtendedWebElement title;
-
 
     @FindBy(xpath = "//*[@resource-id = 'com.android.systemui:id/notification_stack_scroller']")
     protected ExtendedWebElement notification_scroller;
@@ -52,26 +67,24 @@ public class NotificationPage extends MobileAbstractPage {
             "or @resource-id='com.android.systemui:id/clear_all_button']")
     protected ExtendedWebElement dismissBtn;
 
-
-    //Found stable solution
+    // Found stable solution
     @FindBy(id = "com.android.systemui:id/notification_panel")
     private List<ExtendedWebElement> notificationPanel;
 
-    //settings data
+    // settings data
     @FindBy(id = "com.android.systemui:id/clear_all_button")
     private List<ExtendedWebElement> clearAllBtn;
 
-    //last items
+    // last items
     @FindBy(id = "com.android.systemui:id/latestItems")
     private List<ExtendedWebElement> lastItemsContainer;
 
-    //events data
+    // events data
     @FindBy(id = "android:id/status_bar_latest_event_content")
     private List<ExtendedWebElement> lastItemsContent;
 
     @FindBy(id = "android:id/title")
     private List<ExtendedWebElement> itemTitle;
-
 
     String itemTitle_Locator_Text = "android:id/title";
 
@@ -85,7 +98,6 @@ public class NotificationPage extends MobileAbstractPage {
     String itemText_Tablet_Locator_Text = "android:id/big_text";
     @FindBy(id = "android:id/time")
     private List<ExtendedWebElement> itemTime;
-
 
     /**
      * isNativeNotificationPage
@@ -118,7 +130,6 @@ public class NotificationPage extends MobileAbstractPage {
         return lastItemsContent.size();
     }
 
-
     /**
      * getItemTitle
      *
@@ -143,7 +154,7 @@ public class NotificationPage extends MobileAbstractPage {
     public String getItemText(int num) {
         try {
             LOGGER.info("Visible text:" + lastItemsContent.get(num).findExtendedWebElements(MobileBy.className("android.widget.TextView")).size());
-            if (DevicePool.getDevice().getDeviceType() == DeviceType.Type.ANDROID_TABLET) {
+            if (IDriverPool.getDefaultDevice().getDeviceType() == DeviceType.Type.ANDROID_TABLET) {
                 try {
                     if (lastItemsContent.get(num).findExtendedWebElement(MobileBy.id(itemText_Tablet_Locator_Text)).isElementNotPresent(1)) {
                         return lastItemsContent.get(num).findExtendedWebElement(MobileBy.id(itemText_Phone_Locator_Text)).getText();
@@ -151,7 +162,7 @@ public class NotificationPage extends MobileAbstractPage {
                         return lastItemsContent.get(num).findExtendedWebElement(MobileBy.id(itemText_Tablet_Locator_Text)).getText();
                     }
                 } catch (Exception err) {
-                    LOGGER.error("Issue for getting notifications on Tablet.",err);
+                    LOGGER.error("Issue for getting notifications on Tablet.", err);
                     return lastItemsContent.get(num).findExtendedWebElements(MobileBy.className("android.widget.TextView")).get(2).getText();
                 }
             } else {
@@ -167,15 +178,17 @@ public class NotificationPage extends MobileAbstractPage {
         clearAllBtn.get(0).click();
     }
 
-    /*public MessagesPage tapLastItemsContent(int num) {
-        tapElement(lastItemsContainer.get(num));
-        return new MessagesPage(driver);
-    }
-
-    public MessagesPage tapItemTitle(int num) {
-        tapElement(lastItemsContent.get(num));
-        return new MessagesPage(driver);
-    }*/
+    /*
+     * public MessagesPage tapLastItemsContent(int num) {
+     * tapElement(lastItemsContainer.get(num));
+     * return new MessagesPage(driver);
+     * }
+     * 
+     * public MessagesPage tapItemTitle(int num) {
+     * tapElement(lastItemsContent.get(num));
+     * return new MessagesPage(driver);
+     * }
+     */
 
     /**
      * clearNotifications
@@ -206,12 +219,10 @@ public class NotificationPage extends MobileAbstractPage {
                 x1 = point.x + dim.width / 6;
                 x2 = point.x + dim.width * 5 / 6;
                 y1 = y2 = point.y + dim.height / 2;
-                AndroidUtils
-                        .swipeCoord(x1, y1, x2, y2, SWIPE_DURATION);
+                MobileUtils.swipe(x1, y1, x2, y2, SWIPE_DURATION);
             }
         }
     }
-
 
     /**
      * cleanNotificationByService
@@ -219,7 +230,6 @@ public class NotificationPage extends MobileAbstractPage {
     public void cleanNotificationByService() {
         notificationService.clearNotifications();
     }
-
 
     /**
      * getAllAvailableNotifications
@@ -266,6 +276,5 @@ public class NotificationPage extends MobileAbstractPage {
     public boolean isOpened() {
         return isOpened(EXPLICIT_TIMEOUT);
     }
-
 
 }

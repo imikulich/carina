@@ -4,7 +4,6 @@
 	xmlns="http://maven.apache.org/POM/4.0.0">
 
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.qaprosoft</groupId>
 	<artifactId>carina-hockeyapp</artifactId>
 	<packaging>jar</packaging>
 
@@ -41,18 +40,19 @@
 		</dependency>
 
 		<!-- Test utilities -->
-		<dependency>
-			<groupId>org.testng</groupId>
-			<artifactId>testng</artifactId>
-		</dependency>
 
 		<!-- needed for spring RestTemplate stuff -->
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 			<version>${spring.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
-
 
 	</dependencies>
 
