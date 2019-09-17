@@ -36,7 +36,7 @@ import com.qaprosoft.zafira.models.dto.TagType;
  */
 public class TestRailTest implements ITestRailManager {
 
-    protected static final Logger LOGGER = Logger.getLogger(TestRailTest.class);
+    private static final Logger LOGGER = Logger.getLogger(TestRailTest.class);
 
     private static final String TEST_ID = "5,6,65500";
     private static final String EXPECTED_TEST_ID = "65500";

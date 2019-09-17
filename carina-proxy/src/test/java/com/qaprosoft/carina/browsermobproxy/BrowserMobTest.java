@@ -15,19 +15,6 @@
  *******************************************************************************/
 package com.qaprosoft.carina.browsermobproxy;
 
-import com.qaprosoft.carina.core.foundation.utils.Configuration;
-import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
-import com.qaprosoft.carina.core.foundation.utils.R;
-import com.qaprosoft.carina.proxy.SystemProxy;
-import net.lightbody.bmp.BrowserMobProxy;
-import net.lightbody.bmp.proxy.CaptureType;
-import org.apache.log4j.Logger;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -35,8 +22,25 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.net.ssl.SSLContext;
+
+import org.apache.log4j.Logger;
+import org.testng.Assert;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Test;
+
+import com.qaprosoft.carina.core.foundation.utils.Configuration;
+import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
+import com.qaprosoft.carina.core.foundation.utils.R;
+import com.qaprosoft.carina.proxy.SystemProxy;
+
+import net.lightbody.bmp.BrowserMobProxy;
+import net.lightbody.bmp.proxy.CaptureType;
+
 public class BrowserMobTest {
-    protected static final Logger LOGGER = Logger.getLogger(BrowserMobTest.class);
+    private static final Logger LOGGER = Logger.getLogger(BrowserMobTest.class);
     private static String header = "my_header";
     private static String headerValue = "my_value";
     private static String testUrl = "https://ci.qaprosoft.com";
@@ -117,6 +121,29 @@ public class BrowserMobTest {
         Assert.assertNotNull(proxy.getHar(), "Har is unexpectedly null!");
         Assert.assertEquals(content.size(), 1,"Filtered response number is not as expected!");
         Assert.assertTrue(content.get(0).contains(filterKey), "Response doesn't contain expected key!");
+    }
+
+    @DataProvider(parallel = false)
+    public static Object[][] dataProviderForMultiThreadProxy() {
+        return new Object[][] {
+                { "Test1" },
+                { "Test2" } };
+    }
+
+    @Test(dataProvider = "dataProviderForMultiThreadProxy")
+    public void testRegisterProxy(String arg) {
+        ProxyPool.setupBrowserMobProxy();
+        int tempPort = ProxyPool.getProxy().getPort();
+        ProxyPool.stopProxy();
+        BrowserMobProxy proxy = ProxyPool.createProxy();
+        proxy.setTrustAllServers(true);
+        proxy.setMitmDisabled(false);
+        ProxyPool.registerProxy(proxy);
+
+        ProxyPool.startProxy(tempPort);
+        int actualPort = ProxyPool.getProxy().getPort();
+        LOGGER.info(String.format("Checking Ports Before (%s) After (%s)", tempPort, actualPort));
+        Assert.assertEquals(tempPort, actualPort, "Proxy Port before, after do not match on current thread");
     }
 
     private void initialize() {

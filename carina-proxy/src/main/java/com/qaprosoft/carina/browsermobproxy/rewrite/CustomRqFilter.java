@@ -33,7 +33,7 @@ import net.lightbody.bmp.util.HttpMessageInfo;
  */
 public class CustomRqFilter implements RequestFilter {
     
-    protected static final Logger LOGGER = Logger.getLogger(CustomRqFilter.class);
+    private static final Logger LOGGER = Logger.getLogger(CustomRqFilter.class);
     
     private List<RewriteItem> rewrites = new ArrayList<>();
 

@@ -39,7 +39,7 @@ import com.github.fge.jsonschema.main.JsonSchema;
 import com.github.fge.jsonschema.main.JsonSchemaFactory;
 
 public class JsonValidator {
-	private final static Logger LOGGER = Logger.getLogger(JsonValidator.class);
+    private static final Logger LOGGER = Logger.getLogger(JsonValidator.class);
 
 	public static void validateJson(String expectedJson, String actualJson, JSONCompareMode jsonCompareMode) {
 		try {

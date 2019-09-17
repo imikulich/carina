@@ -21,6 +21,7 @@ package com.qaprosoft.carina.core.foundation.commons;
  * @author Alex Khursevich
  */
 public class SpecialKeywords {
+    public static final String TEST_RUN_ID = java.util.UUID.randomUUID().toString();
     public static final String IGNORE = "$ignore";
     public static final String GENERATE = "\\{generate:\\d*\\}";
     public static final String GENERATE_UUID = "\\{generate_uuid\\}";
@@ -108,6 +109,7 @@ public class SpecialKeywords {
     public static final String TABLET = "tablet";
     public static final String PHONE = "phone";
     public static final String TV = "tv";
+    public static final String ANDROID_TV = "android_tv";
 
     public static final String PASSED = "PASSED";
     public static final String FAILED = "FAILED";
@@ -157,6 +159,9 @@ public class SpecialKeywords {
     public static final String MOBILE_PROXY_PORT = "capabilities.proxyPort";
     
     public static final String  SLOT_CAPABILITIES = "slotCapabilities";
+    
+    public static final String APP_PACKAGE = "appPackage";
+    public static final String BUNDLE_ID = "CFBundleIdentifier";
 
 
     // ------------- STF PROPERTIES ---------------------------------
@@ -175,4 +180,23 @@ public class SpecialKeywords {
     public static final String RULE_FILTER_SPLITTER = ";;";
     public static final String RULE_FILTER_AND_CONDITION = "&&";
 
+
+    // ------------- Mobile screenshots cutting strategies configuration  ---------------
+    public static final int DEFAULT_SCROLL_TIMEOUT = 100;
+    public static final int DEFAULT_BLOCK = 0;
+    public static final int DEFAULT_IOS_HEADER = 74;
+    public static final int IPAD_HEADER = 102;
+    public static final int IPHONE_X_HEADER = 95;
+    public static final int IPHONE_PLUS_HEADER = 82;
+    public static final int ALTERNATIVE_IOS_FOOTER = 42;
+    public static final float DEFAULT_DPR= 2.0F;
+    public static final float IPHONE_X_DPR= 3.0F;
+    public static final int DEFAULT_WIDTH= 375;
+    public static final int DEFAULT_PLUS_WIDTH= 414;
+    public static final int DEFAULT_IPAD_WIDTH= 768;
+    public static final int DEFAULT_SE_WIDTH= 320;
+    
+    // ------------- Cucumber configuration  ---------------
+    public static final String CUCUMBER_REPORT_FOLDER = "CucumberReport";
+    public static final String CUCUMBER_REPORT_SUBFOLDER = "cucumber-html-reports";
 }

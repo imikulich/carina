@@ -19,8 +19,8 @@ import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
 import org.joda.time.DateTimeZone;
+import org.apache.log4j.Logger;
 
 public class DeviceTimeZone {
 
@@ -278,7 +278,7 @@ public class DeviceTimeZone {
         try {
             return DateTimeZone.forID(tz).toTimeZone().observesDaylightTime();
         } catch (Exception e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
             return false;
         }
     }
@@ -287,7 +287,7 @@ public class DeviceTimeZone {
         try {
             return getTimezoneOffset(DateTimeZone.forID(tz).toTimeZone());
         } catch (Exception e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
             return "";
         }
     }

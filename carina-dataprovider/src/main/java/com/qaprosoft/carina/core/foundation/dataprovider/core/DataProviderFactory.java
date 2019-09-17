@@ -36,7 +36,7 @@ import com.qaprosoft.carina.core.foundation.dataprovider.core.impl.BaseDataProvi
  */
 public class DataProviderFactory {
 
-    protected static final Logger LOGGER = Logger.getLogger(DataProviderFactory.class);
+    private static final Logger LOGGER = Logger.getLogger(DataProviderFactory.class);
 
     private DataProviderFactory() {
     }

@@ -18,10 +18,10 @@ package com.qaprosoft.carina.core.foundation.utils.android;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.FluentWait;
+import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
 

@@ -29,7 +29,7 @@ import com.qaprosoft.carina.core.foundation.webdriver.decorator.extractor.Abstra
 
 public class DivisionElementExtractor extends AbstractElementExtractor implements IDriverPool {
 
-    private Logger LOGGER = Logger.getLogger(DivisionElementExtractor.class);
+    private static final Logger LOGGER = Logger.getLogger(DivisionElementExtractor.class);
 
     @Override
     public ExtendedWebElement getElementsByCoordinates(int x, int y) {

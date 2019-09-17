@@ -24,13 +24,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.support.events.EventFiringWebDriver;
 import org.testng.IRetryAnalyzer;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
@@ -52,15 +48,11 @@ import com.qaprosoft.carina.core.foundation.utils.ParameterGenerator;
 import com.qaprosoft.carina.core.foundation.utils.R;
 import com.qaprosoft.carina.core.foundation.utils.StringGenerator;
 import com.qaprosoft.carina.core.foundation.utils.naming.TestNamingUtil;
-import com.qaprosoft.carina.core.foundation.webdriver.CarinaDriver;
 import com.qaprosoft.carina.core.foundation.webdriver.IDriverPool;
-import com.qaprosoft.carina.core.foundation.webdriver.Screenshot;
 import com.qaprosoft.carina.core.foundation.webdriver.device.Device;
 
 @SuppressWarnings("deprecation")
 public class AbstractTestListener extends TestListenerAdapter implements IDriverPool {
-    private static final Logger LOGGER = Logger.getLogger(AbstractTestListener.class);
-
     protected static ThreadLocal<TestResultItem> configFailures = new ThreadLocal<TestResultItem>();
 
     private void startItem(ITestResult result, Messager messager) {
@@ -90,14 +82,11 @@ public class AbstractTestListener extends TestListenerAdapter implements IDriver
         String test = TestNamingUtil.getCanonicalTestName(result);
 
         String errorMessage = getFailureReason(result);
-
-        takeScreenshot(result, "TEST FAILED - " + errorMessage);
-
         String deviceName = getDeviceName();
 
         // TODO: remove hard-coded text
         if (!errorMessage.contains("All tests were skipped! Analyze logs to determine possible configuration issues.")) {
-            messager.info(deviceName, test, DateUtils.now(), errorMessage);
+            messager.error(deviceName, test, DateUtils.now(), errorMessage);
             if (!R.EMAIL.getBoolean("fail_full_stacktrace_in_report") && result.getThrowable() != null
                     && result.getThrowable().getMessage() != null
                     && !StringUtils.isEmpty(result.getThrowable().getMessage())) {
@@ -118,11 +107,9 @@ public class AbstractTestListener extends TestListenerAdapter implements IDriver
 
         String errorMessage = getFailureReason(result);
 
-        takeScreenshot(result, "TEST FAILED - " + errorMessage);
-
         String deviceName = getDeviceName();
 
-        messager.info(deviceName, test, String.valueOf(count), String.valueOf(maxCount), errorMessage);
+        messager.error(deviceName, test, String.valueOf(count), String.valueOf(maxCount), errorMessage);
 
         result.getTestContext().removeAttribute(SpecialKeywords.TEST_FAILURE_MESSAGE);
         return errorMessage;
@@ -172,7 +159,7 @@ public class AbstractTestListener extends TestListenerAdapter implements IDriver
 
         String deviceName = getDeviceName();
 
-        messager.info(deviceName, test, DateUtils.now(), errorMessage);
+        messager.warn(deviceName, test, DateUtils.now(), errorMessage);
 
         EmailReportItemCollector
                 .push(createTestResult(result, TestResultType.SKIP, errorMessage, result.getMethod().getDescription()));
@@ -222,8 +209,10 @@ public class AbstractTestListener extends TestListenerAdapter implements IDriver
         }
         
         ReportContext.renameTestDir(test);
+        ReportContext.generateTestReport();
 
         TestNamingUtil.releaseTestInfoByThread();
+        ReportContext.emptyTestDirData();
     }
 
     @Override
@@ -262,7 +251,6 @@ public class AbstractTestListener extends TestListenerAdapter implements IDriver
         // closeLogAppender(test);
 
         String errorMessage = getFailureReason(result);
-        takeScreenshot(result, "CONFIGURATION FAILED - " + errorMessage);
 
         TestResultItem resultItem = createTestResult(result, TestResultType.FAIL, errorMessage,
                 result.getMethod().getDescription());
@@ -389,7 +377,7 @@ public class AbstractTestListener extends TestListenerAdapter implements IDriver
             LOGGER.error("retry_count will be ignored as RetryAnalyzer is not declared for "
                     + result.getMethod().getMethodName());
         } else if (count > 0 && count <= maxCount && !Jira.isRetryDisabled(result)) {
-            failRetryItem(result, Messager.RETRY_RETRY_FAILED, count - 1, maxCount);
+            failRetryItem(result, Messager.RETRY_FAILED, count - 1, maxCount);
             //TODO: try to change current result->method status to failed
             result.setStatus(2);
             afterTest(result);
@@ -622,22 +610,4 @@ public class AbstractTestListener extends TestListenerAdapter implements IDriver
         configFailures.set(resultItem);
     }
 
-    private String takeScreenshot(ITestResult result, String msg) {
-        String screenId = "";
-
-        ConcurrentHashMap<String, CarinaDriver> drivers = getDrivers();
-
-        for (Map.Entry<String, CarinaDriver> entry : drivers.entrySet()) {
-            String driverName = entry.getKey();
-            WebDriver drv = entry.getValue().getDriver();
-
-            if (drv instanceof EventFiringWebDriver) {
-                drv = ((EventFiringWebDriver) drv).getWrappedDriver();
-            }
-            
-            screenId = Screenshot.captureFailure(drv, driverName + ": " + msg); // in case of failure
-        }
-        return screenId;
-    }
-    
 }

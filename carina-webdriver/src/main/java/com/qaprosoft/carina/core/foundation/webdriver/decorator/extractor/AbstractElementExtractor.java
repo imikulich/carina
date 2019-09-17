@@ -27,7 +27,7 @@ import com.qaprosoft.carina.core.foundation.webdriver.decorator.ExtendedWebEleme
 
 public abstract class AbstractElementExtractor {
 
-    private Logger LOGGER = Logger.getLogger(AbstractElementExtractor.class);
+    private static final Logger LOGGER = Logger.getLogger(AbstractElementExtractor.class);
 
     public boolean isInside(Rectangle rect, int x, int y) {
         return rect.x <= x && rect.x + rect.width >= x && rect.y <= y && rect.y + rect.height >= y;

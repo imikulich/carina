@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.qaprosoft.zafira.listener.adapter.SuiteAdapter;
+import com.qaprosoft.zafira.listener.adapter.TestResultAdapter;
 import org.apache.log4j.Logger;
 import org.testng.ISuite;
 import org.testng.ITestResult;
@@ -30,11 +32,11 @@ import com.qaprosoft.carina.core.foundation.performance.Timer;
 import com.qaprosoft.carina.core.foundation.report.qtest.IQTestManager;
 import com.qaprosoft.carina.core.foundation.report.testrail.ITestRailManager;
 import com.qaprosoft.carina.core.foundation.retry.RetryCounter;
+import com.qaprosoft.carina.core.foundation.utils.Configuration;
 import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
 import com.qaprosoft.carina.core.foundation.utils.R;
 import com.qaprosoft.carina.core.foundation.utils.naming.TestNamingUtil;
 import com.qaprosoft.carina.core.foundation.utils.ownership.Ownership;
-import com.qaprosoft.carina.core.foundation.utils.ownership.Ownership.OwnerType;
 import com.qaprosoft.carina.core.foundation.utils.tag.PriorityManager;
 import com.qaprosoft.carina.core.foundation.utils.tag.TagManager;
 import com.qaprosoft.carina.core.foundation.webdriver.IDriverPool;
@@ -51,11 +53,20 @@ import com.qaprosoft.zafira.models.dto.config.ConfigurationType;
  * @author akhursevich
  */
 public class ZafiraConfigurator implements IConfigurator, ITestRailManager, IQTestManager {
-    protected static final Logger LOGGER = Logger.getLogger(ZafiraConfigurator.class);
+    private static final Logger LOGGER = Logger.getLogger(ZafiraConfigurator.class);
 
     @Override
     public ConfigurationType getConfiguration() {
         ConfigurationType conf = new ConfigurationType();
+        
+        String platform = Configuration.getPlatform();
+        // override platform to register correctly on Zafira based on capabilities.platform and platformName
+        R.CONFIG.put(Parameter.PLATFORM.getKey(), platform);
+        
+        String browser = Configuration.getBrowser();
+        // override browser to register correctly on Zafira based on capabilities.browserName as well
+        R.CONFIG.put(Parameter.BROWSER.getKey(), browser);
+        
         for (Parameter parameter : Parameter.values()) {
             conf.getArg().add(buildArgumentType(parameter.getKey(), R.CONFIG.get(parameter.getKey())));
         }
@@ -101,64 +112,72 @@ public class ZafiraConfigurator implements IConfigurator, ITestRailManager, IQTe
     }
 
     @Override
-    public String getOwner(ISuite suite) {
+    public String getOwner(SuiteAdapter suiteAdapter) {
+        ISuite suite = (ISuite) suiteAdapter.getSuite();
         String owner = suite.getParameter("suiteOwner");
         LOGGER.debug("owner: " + owner);
         return owner != null ? owner : "";
     }
 
     @Override
-    public String getPrimaryOwner(ITestResult test) {
+    public String getPrimaryOwner(TestResultAdapter testResultAdapter) {
         // TODO: re-factor that
-        String primaryOwner = Ownership.getMethodOwner(test, OwnerType.PRIMARY); 
+        ITestResult test = (ITestResult) testResultAdapter.getTestResult();
+        String primaryOwner = Ownership.getMethodOwner(test); 
         LOGGER.debug("primaryOwner: " + primaryOwner);
         return primaryOwner;
     }
 
+    //TODO need to remove this method from com.qaprosoft.zafira.config.IConfigurator
     @Override
-    public String getSecondaryOwner(ITestResult test) {
+    public String getSecondaryOwner(TestResultAdapter testResultAdapter) {
         // TODO: re-factor that
-        String secondaryOwner = Ownership.getMethodOwner(test, OwnerType.SECONDARY);
+        ITestResult test = (ITestResult) testResultAdapter.getTestResult();
+        String secondaryOwner = Ownership.getMethodOwner(test);
         LOGGER.debug("secondaryOwner: " + secondaryOwner);
         return secondaryOwner;
     }
 
     @Override
-    public String getTestName(ITestResult test) {
+    public String getTestName(TestResultAdapter testResultAdapter) {
         // TODO: avoid TestNamingUtil
+        ITestResult test = (ITestResult) testResultAdapter.getTestResult();
         String testName = TestNamingUtil.getCanonicalTestName(test);
         LOGGER.debug("testName: " + testName);
         return testName;
     }
 
     @Override
-    public String getTestMethodName(ITestResult test) {
+    public String getTestMethodName(TestResultAdapter testResultAdapter) {
         // TODO: avoid TestNamingUtil
+        ITestResult test = (ITestResult) testResultAdapter.getTestResult();
         String testMethodName = TestNamingUtil.getCanonicalTestMethodName(test);
         LOGGER.debug("testMethodName: " + testMethodName);
         return testMethodName;
     }
 
     @Override
-    public List<String> getTestWorkItems(ITestResult test) {
+    public List<String> getTestWorkItems(TestResultAdapter testResultAdapter) {
+        ITestResult test = (ITestResult) testResultAdapter.getTestResult();
         return Jira.getTickets(test);
     }
 
     @Override
-    public int getRunCount(ITestResult test) {
+    public int getRunCount(TestResultAdapter testResultAdapter) {
         int runCount = RetryCounter.getRunCount();
         LOGGER.debug("runCount: " + runCount);
         return runCount;
     }
 
     @Override
-    public Map<String, Long> getTestMetrics(ITestResult test) {
+    public Map<String, Long> getTestMetrics(TestResultAdapter testResultAdapter) {
         return Timer.readAndClear();
     }
 
     @Override
-    public Set<TagType> getTestTags(ITestResult test) {
+    public Set<TagType> getTestTags(TestResultAdapter testResultAdapter) {
         LOGGER.debug("Collecting TestTags...");
+        ITestResult test = (ITestResult) testResultAdapter.getTestResult();
         Set<TagType> tags = new HashSet<TagType>();
 
         String testPriority = PriorityManager.getPriority(test);
@@ -170,10 +189,10 @@ public class ZafiraConfigurator implements IConfigurator, ITestRailManager, IQTe
         }
 
         Map<String, String> testTags = TagManager.getTags(test);
-        testTags.entrySet().stream().forEach((entry) -> {
+        testTags.forEach((name, value) -> {
             TagType tagEntry = new TagType();
-            tagEntry.setName(entry.getKey());
-            tagEntry.setValue(entry.getValue());
+            tagEntry.setName(name);
+            tagEntry.setValue(value);
             tags.add(tagEntry);
         });
 
@@ -189,12 +208,16 @@ public class ZafiraConfigurator implements IConfigurator, ITestRailManager, IQTe
     }
 
     @Override
-    public Set<TestArtifactType> getArtifacts(ITestResult test) {
+    public Set<TestArtifactType> getArtifacts(TestResultAdapter testResultAdapter) {
         LOGGER.debug("Collecting artifacts...");
         // Generate additional artifacts links on test run
         return Artifacts.getArtifacts();
     }
 
+    @Override
+    public void clearArtifacts() {
+        Artifacts.clearArtifacts();
+    }
 
     //Moved them separately for future easier reusing if getTestTags will be overridden.
     //TODO: Should we make them public or protected?

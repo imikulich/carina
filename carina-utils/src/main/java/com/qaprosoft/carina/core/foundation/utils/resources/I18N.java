@@ -16,7 +16,12 @@
 package com.qaprosoft.carina.core.foundation.utils.resources;
 
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
@@ -39,7 +44,7 @@ import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
  * 
  */
 public class I18N {
-    protected static final Logger LOGGER = Logger.getLogger(I18N.class);
+    private static final Logger LOGGER = Logger.getLogger(I18N.class);
 
     private static ArrayList<ResourceBundle> resBoundles = new ArrayList<ResourceBundle>();
 
@@ -113,7 +118,7 @@ public class I18N {
                     LOGGER.debug(String
                             .format("Resource '%s' added.", resource));
                 } catch (MissingResourceException e) {
-                    LOGGER.debug(e);
+                    LOGGER.debug(e.getMessage(), e);
                 }
             } else {
                 LOGGER.debug(String

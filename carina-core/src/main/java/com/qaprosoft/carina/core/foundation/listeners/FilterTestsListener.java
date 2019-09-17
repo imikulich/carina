@@ -16,7 +16,7 @@ import java.util.List;
 
 public class FilterTestsListener implements ISuiteListener {
 
-    protected static final Logger LOGGER = Logger.getLogger(FilterTestsListener.class);
+    private static final Logger LOGGER = Logger.getLogger(FilterTestsListener.class);
 
     private List<Rule> rules = new ArrayList<>();
 

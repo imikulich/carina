@@ -80,7 +80,7 @@ import com.qaprosoft.carina.core.foundation.webdriver.decorator.ExtendedWebEleme
  */
 
 public class L10Nparser {
-    protected static final Logger LOGGER = Logger.getLogger(L10Nparser.class);
+    private static final Logger LOGGER = Logger.getLogger(L10Nparser.class);
 
     public static Locale actualLocale;
 
@@ -148,7 +148,7 @@ public class L10Nparser {
             }
             locale = new Locale(lang, country);
         } catch (Exception e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
         }
         setActualLocale(locale);
     }
@@ -196,7 +196,7 @@ public class L10Nparser {
                 in.close();
 
             } catch (Exception e) {
-                LOGGER.debug(e);
+                LOGGER.debug(e.getMessage(), e);
             }
         }
 
@@ -218,7 +218,7 @@ public class L10Nparser {
                     return true;
                 }
             } catch (Exception e) {
-                LOGGER.debug(e);
+                LOGGER.debug(e.getMessage(), e);
             }
         } else {
             ret = true;
@@ -404,7 +404,7 @@ public class L10Nparser {
             str = str.replaceAll("[0-9]", "");
             str = str.replace("!", "").replace("\u0085", "").replace("…", "");
         } catch (Exception e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
         }
         return str;
     }
@@ -469,7 +469,7 @@ public class L10Nparser {
                     return;
                 }
             } catch (Exception e) {
-                LOGGER.error(e);
+                LOGGER.error(e.getMessage(), e);
             }
 
             LOGGER.info("New localization for '" + actualLocale + "'");
@@ -493,7 +493,7 @@ public class L10Nparser {
                 }
 
             } catch (Exception e) {
-                LOGGER.error(e);
+                LOGGER.error(e.getMessage(), e);
             }
             prop.clear();
         } else {

@@ -25,7 +25,7 @@ import com.qaprosoft.carina.core.gui.mobile.devices.MobileAbstractPage;
 
 public class TZChangerPage extends MobileAbstractPage {
 
-    protected static final Logger LOGGER = Logger.getLogger(TZChangerPage.class);
+    private static final Logger LOGGER = Logger.getLogger(TZChangerPage.class);
 
     @FindBy(id = "com.futurek.android.tzc:id/txt_selected")
     protected ExtendedWebElement title;

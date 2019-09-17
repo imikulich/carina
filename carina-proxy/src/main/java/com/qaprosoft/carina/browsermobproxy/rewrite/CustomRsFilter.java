@@ -32,7 +32,7 @@ import net.lightbody.bmp.util.HttpMessageInfo;
  */
 public class CustomRsFilter implements ResponseFilter {
     
-    protected static final Logger LOGGER = Logger.getLogger(CustomRsFilter.class);
+    private static final Logger LOGGER = Logger.getLogger(CustomRsFilter.class);
 
     private List<RewriteItem> rewrites = new ArrayList<>();
 

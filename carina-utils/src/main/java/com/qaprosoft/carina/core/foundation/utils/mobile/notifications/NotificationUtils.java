@@ -26,7 +26,7 @@ import com.qaprosoft.carina.core.foundation.utils.rest.RestUtil;
 
 public class NotificationUtils {
 
-    protected static final Logger LOGGER = Logger.getLogger(NotificationUtils.class);
+    private static final Logger LOGGER = Logger.getLogger(NotificationUtils.class);
 
     /**
      * call Push Service

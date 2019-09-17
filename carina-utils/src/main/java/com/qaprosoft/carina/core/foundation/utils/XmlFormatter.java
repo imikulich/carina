@@ -48,7 +48,7 @@ public class XmlFormatter {
 
             return writer.writeToString(document);
         } catch (Exception e) {
-            LOGGER.error(e.getMessage());
+            LOGGER.error(e.getMessage(), e);
         }
         return xml; // Return the same string if error take place
     }

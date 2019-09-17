@@ -31,7 +31,7 @@ import com.qaprosoft.carina.core.foundation.exception.PlaceholderResolverExcepti
  * @author Alexey Khursevich (hursevich@gmail.com)
  */
 public class PlaceholderResolver {
-    protected static final Logger LOGGER = Logger.getLogger(PlaceholderResolver.class);
+    private static final Logger LOGGER = Logger.getLogger(PlaceholderResolver.class);
 
     private static final Pattern PATTERN = Pattern.compile(SpecialKeywords.PLACEHOLER);
 

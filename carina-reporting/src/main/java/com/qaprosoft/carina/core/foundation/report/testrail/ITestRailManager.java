@@ -30,7 +30,7 @@ import org.testng.ITestResult;
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 
 public interface ITestRailManager extends ITestCases {
-    Logger LOGGER = Logger.getLogger(ITestRailManager.class);
+    static final Logger LOGGER = Logger.getLogger(ITestRailManager.class);
 
     default Set<String> getTestRailCasesUuid(ITestResult result) {
         Set<String> testCases = new HashSet<String>();
@@ -54,7 +54,6 @@ public interface ITestRailManager extends ITestCases {
 
             testCases.addAll(dataProviderIds);
 
-            LOGGER.debug(dataProviderIds);
         }
 
         // Get a handle to the class and method
@@ -109,7 +108,7 @@ public interface ITestRailManager extends ITestCases {
                 }
             }
         } catch (ClassNotFoundException e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
         }
 
         // append cases id values from ITestCases map (custom TestNG provider)

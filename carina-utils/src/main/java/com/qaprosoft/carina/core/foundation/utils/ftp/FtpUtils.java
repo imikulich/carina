@@ -13,7 +13,7 @@ import org.apache.commons.net.ftp.FTPReply;
 import org.apache.log4j.Logger;
 
 public class FtpUtils {
-	private static final Logger LOGGER = Logger.getLogger(FtpUtils.class);
+    private static final Logger LOGGER = Logger.getLogger(FtpUtils.class);
 	private static final int DEFAULT_PORT = 21;
 
 	public static void uploadFile(String ftpHost, String user, String password, String filePassToUpload,
@@ -94,16 +94,19 @@ public class FtpUtils {
 		}
 	}
 
-	public static void ftpDisconnect(FTPClient ftp) {
-		if (ftp.isConnected()) {
-			try {
-				ftp.logout();
-				ftp.disconnect();
-			} catch (Exception ioe) {
-				LOGGER.error("Exception while disconnecting ftp", ioe);
-			}
-		}
-		LOGGER.debug("FTP has been successfully disconnected.");
-	}
-
+    public static void ftpDisconnect(FTPClient ftp) {
+        try {
+            if (ftp.isConnected()) {
+                try {
+                    ftp.logout();
+                    ftp.disconnect();
+                } catch (Exception ioe) {
+                    LOGGER.error("Exception while disconnecting ftp", ioe);
+                }
+            }
+        } catch (Throwable thr) {
+            LOGGER.error("Throwable while disconnecting ftp", thr);
+        }
+        LOGGER.debug("FTP has been successfully disconnected.");
+    }
 }

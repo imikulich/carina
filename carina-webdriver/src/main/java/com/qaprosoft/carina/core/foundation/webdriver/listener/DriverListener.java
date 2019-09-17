@@ -15,13 +15,13 @@
  *******************************************************************************/
 package com.qaprosoft.carina.core.foundation.webdriver.listener;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.events.WebDriverEventListener;
+import org.apache.log4j.Logger;
 import org.testng.ITestResult;
 import org.testng.Reporter;
 
@@ -29,12 +29,17 @@ import com.qaprosoft.carina.core.foundation.webdriver.Screenshot;
 import com.qaprosoft.zafira.client.ZafiraSingleton;
 import com.qaprosoft.zafira.models.dto.TestArtifactType;
 
+import io.appium.java_client.android.AndroidDriver;
+import io.appium.java_client.ios.IOSDriver;
+
 /**
  * ScreenshotEventListener - captures screenshot after essential webdriver event.
  * 
  * @author Alex Khursevich (alex@qaprosoft.com)
  */
 public class DriverListener implements WebDriverEventListener {
+    private static final Logger LOGGER = Logger.getLogger(DriverListener.class);
+    
 	// 1. register live vnc url in DriverFactory (method streamVNC should return valid TestArtifactType
 	// 2. DriverFactory->getEventListeners(TestArtifactType vncArtifact)
 	// 3. declare vncArtifact using constructor in DriverListener
@@ -45,8 +50,6 @@ public class DriverListener implements WebDriverEventListener {
 		this.vncArtifact = vncArtifact;
 	}
 	
-    private static final Logger LOGGER = Logger.getLogger(DriverListener.class);
-
     private final static ThreadLocal<String> currentPositiveMessage = new ThreadLocal<String>();
     private final static ThreadLocal<String> currentNegativeMessage = new ThreadLocal<String>();
 
@@ -189,13 +192,27 @@ public class DriverListener implements WebDriverEventListener {
 
         String urlPrefix = "";
         try {
-            urlPrefix = "url: " + driver.getCurrentUrl() + "\n";
+            if (!isMobile(driver)) {
+                urlPrefix = "url: " + driver.getCurrentUrl() + "\n";
+            }
+            // 1. if you see mess with afterTest carina actions and Timer startup failure you should follow steps #2+ to determine root cause.
+            //      Driver initialization 'default' FAILED! Retry 1 of 1 time - Operation already started: mobile_driverdefault
+            // 2. carefully track all preliminary exception for the same thread to detect 1st problematic exception
+            // 3. 99% those root exception means that we should prohibit screenshot generation for such use-case
+            // 4. if 3rd one is true just update Screenshot.isCaptured() adding part of the exception to the list
             // handle cases which should't be captured
             if (Screenshot.isCaptured(thr.getMessage())) {
                 captureScreenshot(urlPrefix + thr.getMessage(), driver, null, true);
             }
         } catch (Exception e) {
-            LOGGER.debug("Unrecognized failure detected in DriverListener->onException: " + e.getMessage(), e);
+            if (!e.getMessage().isEmpty()
+                    && (e.getMessage().contains("Method has not yet been implemented") || (e.getMessage().contains("Method is not implemented")))) {
+                LOGGER.debug("Unrecognized exception detected in DriverListener->onException! " + e.getMessage(), e);
+            } else {
+                LOGGER.error("Unrecognized exception detected in DriverListener->onException! " + e.getMessage(), e);
+            }
+        } catch (Throwable e) {
+            LOGGER.error("Take a look to the logs above for current thread and add exception into the exclusion for Screenshot.isCaptured(). " + e.getMessage(), e);
         }
         
         LOGGER.debug("DriverListener->onException finished.");
@@ -292,6 +309,10 @@ public class DriverListener implements WebDriverEventListener {
         currentNegativeMessage.remove();
     }
 
+    private boolean isMobile(WebDriver driver) {
+        return (driver instanceof IOSDriver) || (driver instanceof AndroidDriver);
+    }
+    
 	@Override
 	public <X> void afterGetScreenshotAs(OutputType<X> arg0, X arg1) {
 		// do nothing

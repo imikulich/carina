@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 public class FileManager {
 
-    protected static final Logger LOGGER = Logger.getLogger(FileManager.class);
+    private static final Logger LOGGER = Logger.getLogger(FileManager.class);
 
     public static void removeDirRecurs(String directory) {
         File dir = new File(directory);

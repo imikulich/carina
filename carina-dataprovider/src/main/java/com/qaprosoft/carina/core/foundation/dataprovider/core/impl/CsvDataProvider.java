@@ -37,7 +37,7 @@ import au.com.bytecode.opencsv.CSVReader;
  */
 public class CsvDataProvider extends BaseDataProvider {
 
-    protected static final Logger LOGGER = Logger.getLogger(CsvDataProvider.class);
+    private static final Logger LOGGER = Logger.getLogger(CsvDataProvider.class);
     private Map<String, Integer> mapper = new HashMap<String, Integer>();
 
     private String executeColumn;

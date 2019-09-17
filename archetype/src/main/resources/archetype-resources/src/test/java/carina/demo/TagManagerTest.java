@@ -42,7 +42,7 @@ import com.qaprosoft.zafira.models.dto.TagType;
  * Tests for {@link TagManager}
  */
 public class TagManagerTest {
-	protected static final Logger LOGGER = Logger.getLogger(TagManagerTest.class);
+	private static final Logger LOGGER = Logger.getLogger(TagManagerTest.class);
 
 	private static final String TAG_NAME = "tag3";
 	private static final String TAG_NAME2 = "tag4";
@@ -57,7 +57,7 @@ public class TagManagerTest {
 		ITestResult result = Reporter.getCurrentTestResult();
 		String priority = PriorityManager.getPriority(result);
 		Assert.assertEquals(priority, "P1");
-		String ownerName = Ownership.getMethodOwner(result, Ownership.OwnerType.PRIMARY);
+		String ownerName = Ownership.getMethodOwner(result);
 		LOGGER.info("Owner:= " + ownerName);
 		Assert.assertEquals(ownerName, "qpsdemo");
 	}
@@ -80,7 +80,7 @@ public class TagManagerTest {
 	}
 
 	@Test
-	@MethodOwner(owner = "qpsdemo", secondaryOwner = "secondOwner")
+	@MethodOwner(owner = "qpsdemo")
 	@TestPriority(value = Priority.P1)
 	@TestTag(name = TAG_NAME, value = TAG_VALUE)
 	public void testTags() {
@@ -91,7 +91,7 @@ public class TagManagerTest {
 	}
 
 	@Test
-	@MethodOwner(owner = "qpsdemo", secondaryOwner = "secondOwner")
+	@MethodOwner(owner = "qpsdemo")
 	@TestPriority(Priority.P2)
 	@TestTag(name = TAG_NAME, value = TAG_VALUE)
 	@TestTag(name = TAG_NAME2, value = TAG_VALUE2)

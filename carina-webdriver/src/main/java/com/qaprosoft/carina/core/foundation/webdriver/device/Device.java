@@ -132,8 +132,8 @@ public class Device extends RemoteDevice implements IDriverPool {
         setUdid(deviceUdid);
         
         String proxyPort = R.CONFIG.get(SpecialKeywords.MOBILE_PROXY_PORT);
-        if (capabilities.getCapability("proxy_port") != null) {
-            proxyPort = capabilities.getCapability("proxy_port").toString();
+        if (capabilities.getCapability(Parameter.PROXY_PORT.getKey()) != null) {
+            proxyPort = capabilities.getCapability(Parameter.PROXY_PORT.getKey()).toString();
         }
 
         setProxyPort(proxyPort);
@@ -150,7 +150,7 @@ public class Device extends RemoteDevice implements IDriverPool {
     }
 
     public boolean isTv() {
-        return getType().equalsIgnoreCase(SpecialKeywords.TV);
+        return getType().equalsIgnoreCase(SpecialKeywords.TV) || getType().equalsIgnoreCase(SpecialKeywords.ANDROID_TV);
     }
 
     public Type getDeviceType() {
@@ -182,7 +182,7 @@ public class Device extends RemoteDevice implements IDriverPool {
     }
 
     public boolean isNull() {
-        if (getName() == null) {
+        if (StringUtils.isEmpty(getName())) {
             return true;
         }
         return getName().isEmpty();
@@ -202,10 +202,6 @@ public class Device extends RemoteDevice implements IDriverPool {
         String[] cmd2 = CmdLine.insertCommandsAfter(executor.getDefaultCmd(), "devices");
         executor.execute(cmd2);
 
-        // TODO: add several attempt of connect until device appear among connected devices
-        // quick workaround to do double connect...
-        executor.execute(cmd);
-        executor.execute(cmd2);
     }
 
     public void disconnectRemote() {
@@ -611,13 +607,8 @@ public class Device extends RemoteDevice implements IDriverPool {
         if (isNull()) {
             return;
         }
-        
-        if (!DeviceType.Type.ANDROID_PHONE.getFamily().equalsIgnoreCase(getOs())) {
-            LOGGER.debug("Logcat log won't be cleared since device is not Android");
-            return;
-        }
 
-		if (!isConnected()) {
+		if (!Configuration.getBoolean(Parameter.EXTRACT_SYS_LOG) && !isConnected()) {
 			//do not use new features if execution is not inside approved cloud
 			return;
 		}
@@ -636,11 +627,11 @@ public class Device extends RemoteDevice implements IDriverPool {
      * @return saved file
      */
     public File saveSysLog() {
-		if (!isConnected()) {
+		if (!Configuration.getBoolean(Parameter.EXTRACT_SYS_LOG) && !isConnected()) {
 			//do not use new features if execution is not inside approved cloud
 			return null;
 		}
-		LOGGER.debug("STF is enabled. Sys log will be extracted...");
+		LOGGER.debug("Sys log will be extracted...");
         String fileName = ReportContext.getTestDir() + "/logcat.log";
         String log = getSysLog();
         if (log.isEmpty()) {
@@ -670,6 +661,7 @@ public class Device extends RemoteDevice implements IDriverPool {
         
 //        TODO: investigate with iOS: how does it work with iOS
 		if (!isConnected()) {
+		    LOGGER.debug("Device isConnected() returned false. Dump file won't be generated.");
 			//do not use new features if execution is not inside approved cloud
 			return null;
 		}

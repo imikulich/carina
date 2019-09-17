@@ -25,7 +25,7 @@ import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
 
 public class SystemProxy {
 
-    protected static final Logger LOGGER = Logger.getLogger(SystemProxy.class);
+    private static final Logger LOGGER = Logger.getLogger(SystemProxy.class);
 
     public static void setupProxy() {
         String proxyHost = Configuration.get(Parameter.PROXY_HOST);

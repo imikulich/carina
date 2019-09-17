@@ -36,7 +36,7 @@ import com.qaprosoft.zafira.models.dto.TagType;
  */
 public class QTestTest implements IQTestManager {
 
-    protected static final Logger LOGGER = Logger.getLogger(QTestTest.class);
+    private static final Logger LOGGER = Logger.getLogger(QTestTest.class);
 
     private static final String TEST_ID = "5,6,65500";
     private static final String EXPECTED_TEST_ID = "65500";

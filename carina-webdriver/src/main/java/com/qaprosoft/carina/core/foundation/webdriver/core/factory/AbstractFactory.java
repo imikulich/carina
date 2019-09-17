@@ -17,9 +17,11 @@ package com.qaprosoft.carina.core.foundation.webdriver.core.factory;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.UUID;
 
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.openqa.selenium.Capabilities;
 import org.openqa.selenium.WebDriver;
@@ -27,8 +29,6 @@ import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 import org.openqa.selenium.support.events.WebDriverEventListener;
-import org.testng.ITestResult;
-import org.testng.Reporter;
 
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 import com.qaprosoft.carina.core.foundation.retry.RetryAnalyzer;
@@ -47,7 +47,7 @@ import io.appium.java_client.ios.IOSStartScreenRecordingOptions.VideoQuality;
  */
 public abstract class AbstractFactory {
     
-    protected static final Logger LOGGER = Logger.getLogger(AbstractFactory.class);
+    private static final Logger LOGGER = Logger.getLogger(AbstractFactory.class);
     
     protected final SimpleDateFormat SDF = new SimpleDateFormat("HH:mm:ss z");
     
@@ -115,10 +115,11 @@ public abstract class AbstractFactory {
     protected TestArtifactType initVideoArtifact(String videoName) {
         TestArtifactType artifact = new TestArtifactType();
         artifact.setName("Video " + SDF.format(new Date()));
-        ITestResult res = Reporter.getCurrentTestResult();
-        if (res != null) {
-        	artifact.setTestId((Long) res.getAttribute("ztid"));
-        }
+        // do not uncomment below steps with "tzid" otherwise each odd (1, 3, 5...) test lost video artifact
+//        ITestResult res = Reporter.getCurrentTestResult();
+//        if (res != null) {
+//        	artifact.setTestId((Long) res.getAttribute("ztid"));
+//        }
         artifact.setLink(String.format(R.CONFIG.get("screen_record_host"), videoName));
         artifact.setExpiresIn(Configuration.getInt(Configuration.Parameter.ARTIFACTS_EXPIRATION_SECONDS));
         return artifact;
@@ -137,5 +138,15 @@ public abstract class AbstractFactory {
 			}
 		}
 		return isEnabled;
+	}
+	
+	/**
+	 * Gets video name from configuration or generates a random one.
+	 * 
+	 * @return video recording name
+	 */
+	protected String getVideoName() {
+		String videoName = R.CONFIG.get("capabilities.videoName");
+		return !StringUtils.isEmpty(videoName) ? videoName : UUID.randomUUID().toString() + ".mp4";
 	}
 }

@@ -34,7 +34,7 @@ import com.qaprosoft.carina.core.foundation.utils.R;
 import com.qaprosoft.carina.proxy.SystemProxy;
 
 public abstract class AbstractCapabilities {
-    protected static final Logger LOGGER = Logger.getLogger(AbstractCapabilities.class);
+    private static final Logger LOGGER = Logger.getLogger(AbstractCapabilities.class);
 
     public abstract DesiredCapabilities getCapability(String testName);
 
@@ -89,18 +89,20 @@ public abstract class AbstractCapabilities {
                 }
             }
         }
-
+        capabilities.setCapability("carinaTestRunId", SpecialKeywords.TEST_RUN_ID);
         return capabilities;
     }
 
     protected Proxy setupProxy() {
         ProxyPool.setupBrowserMobProxy();
         SystemProxy.setupProxy();
-        
+
         String proxyHost = Configuration.get(Parameter.PROXY_HOST);
         String proxyPort = Configuration.get(Parameter.PROXY_PORT);
+        if (Configuration.get(Parameter.BROWSERMOB_PROXY).equals("true")) {
+            proxyPort = Integer.toString(ProxyPool.getProxyPortFromThread());
+        }
         List<String> protocols = Arrays.asList(Configuration.get(Parameter.PROXY_PROTOCOLS).split("[\\s,]+"));
-
 
         if (proxyHost != null && !proxyHost.isEmpty() && proxyPort != null && !proxyPort.isEmpty()) {
 

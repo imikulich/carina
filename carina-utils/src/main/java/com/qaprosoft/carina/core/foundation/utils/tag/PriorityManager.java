@@ -15,14 +15,14 @@
  *******************************************************************************/
 package com.qaprosoft.carina.core.foundation.utils.tag;
 
+import java.lang.reflect.Method;
+
 import org.apache.log4j.Logger;
 import org.testng.ITestContext;
 import org.testng.ITestResult;
 
-import java.lang.reflect.Method;
-
 public class PriorityManager {
-    protected static final Logger LOGGER = Logger.getLogger(PriorityManager.class);
+    private static final Logger LOGGER = Logger.getLogger(PriorityManager.class);
 
     private PriorityManager() {
     }
@@ -54,7 +54,7 @@ public class PriorityManager {
                 LOGGER.debug("Method '" + testMethod + "' priority is: " + priority);
             }
         } catch (ClassNotFoundException e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
         }
         return priority;
     }

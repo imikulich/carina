@@ -9,7 +9,7 @@ import java.util.List;
 
 public class TagFilter implements IFilter {
 
-    protected static final Logger LOGGER = Logger.getLogger(TagFilter.class);
+    private static final Logger LOGGER = Logger.getLogger(TagFilter.class);
 
     @Override
     public boolean isPerform(ITestNGMethod testMethod, List<String> expectedData) {

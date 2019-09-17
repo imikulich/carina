@@ -36,13 +36,26 @@ public class CapabilitiesLoader {
 
     /**
      * Load capabilities and properties from external file into the global CONFIG context.
-     * capabilities.<name>=<value> will be attached to each WebDriver capabilities
-     * <name>=<value> will override appropriate configuration parameter by new <value>
+     * {@code capabilities.<name>=<value> will be attached to each WebDriver capabilities
+     * <name>=<value> will override appropriate configuration parameter by new <value>}
      *  
      * @param fileName
      *            String path to the properties file with custom capabilities and properties
      */
     public void loadCapabilities(String fileName) {
+        loadCapabilities(fileName, false);
+    }
+    
+    /**
+     * Load capabilities and properties from external file into the global or current test CONFIG context.
+     * {@code capabilities.<name>=<value> will be attached to each WebDriver capabilities
+     * <name>=<value> will override appropriate configuration parameter by new <value>}
+     *  
+     * @param fileName
+     *            String path to the properties file with custom capabilities and properties
+     * @param currentTestOnly boolean
+     */
+    public void loadCapabilities(String fileName, boolean currentTestOnly) {
         LOGGER.info("Loading capabilities to global context from " + fileName);
         Properties props = loadProperties(fileName);
 
@@ -53,17 +66,20 @@ public class CapabilitiesLoader {
             String key = entry.getKey();
             LOGGER.info("Set custom property: " + key + "; value: " + value);
             // add each property directly into CONFIG
-            R.CONFIG.put(key, value);
+            R.CONFIG.put(key, value, currentTestOnly);
         }
 
     }
     
     /**
      * Generate DesiredCapabilities from external file.
-     * Only "capabilities.<name>=<value>" will be added to the response.
+     * Only "capabilities.name=value" will be added to the response.
      *  
      * @param fileName
      *            String path to the properties file with custom capabilities
+     *            
+     * @return desiredCapabilities
+     * 			DesiredCapabilities y
      */
     public DesiredCapabilities getCapabilities(String fileName) {
         DesiredCapabilities capabilities = new DesiredCapabilities();

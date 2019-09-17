@@ -17,12 +17,13 @@ package com.qaprosoft.carina.core.foundation.webdriver.core.capability.impl.desk
 
 import java.util.ArrayList;
 
-import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxOptions;
 import org.openqa.selenium.firefox.FirefoxProfile;
 import org.openqa.selenium.net.PortProber;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.apache.log4j.Logger;
 
 import com.qaprosoft.carina.core.foundation.report.ReportContext;
 import com.qaprosoft.carina.core.foundation.utils.Configuration;
@@ -30,6 +31,7 @@ import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
 import com.qaprosoft.carina.core.foundation.webdriver.core.capability.AbstractCapabilities;
 
 public class FirefoxCapabilities extends AbstractCapabilities {
+    private static final Logger LOGGER = Logger.getLogger(FirefoxCapabilities.class);
 
     private static ArrayList<Integer> firefoxPorts = new ArrayList<Integer>();
 
@@ -40,10 +42,11 @@ public class FirefoxCapabilities extends AbstractCapabilities {
     }
 
     public DesiredCapabilities getCapability(String testName, FirefoxProfile profile) {
-        DesiredCapabilities capabilities = DesiredCapabilities.firefox();
+        DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities = initBaseCapabilities(capabilities, BrowserType.FIREFOX, testName);
         capabilities.setCapability(CapabilityType.TAKES_SCREENSHOT, false);
-        capabilities.setCapability(FirefoxDriver.PROFILE, profile);
+        FirefoxOptions options = new FirefoxOptions().setProfile(profile);
+        capabilities.setCapability(FirefoxOptions.FIREFOX_OPTIONS,options);
         return capabilities;
     }
 
@@ -51,10 +54,10 @@ public class FirefoxCapabilities extends AbstractCapabilities {
         FirefoxProfile profile = new FirefoxProfile();
         
         //update browser language
-        String browserLocale = Configuration.get(Parameter.BROWSER_LOCALE); 
-        if (!browserLocale.isEmpty()) {
-        	LOGGER.info("Set Firefox lanaguage to: " + browserLocale);
-        	profile.setPreference("intl.accept_languages", browserLocale);
+        String browserLang = Configuration.get(Parameter.BROWSER_LANGUAGE); 
+        if (!browserLang.isEmpty()) {
+        	LOGGER.info("Set Firefox lanaguage to: " + browserLang);
+        	profile.setPreference("intl.accept_languages", browserLang);
         }
 
         boolean generated = false;
@@ -70,7 +73,6 @@ public class FirefoxCapabilities extends AbstractCapabilities {
         if (firefoxPorts.size() > 20) {
             firefoxPorts.remove(0);
         }
-        LOGGER.debug(firefoxPorts);
 
         profile.setPreference(FirefoxProfile.PORT_PREFERENCE, newPort);
         LOGGER.debug("FireFox profile will use '" + newPort + "' port number.");

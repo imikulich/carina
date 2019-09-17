@@ -21,8 +21,8 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.apache.log4j.Logger;
 
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 
@@ -70,7 +70,7 @@ public class Configuration {
 
         BROWSER_VERSION("browser_version"),
         
-        BROWSER_LOCALE("browser_locale"),
+        BROWSER_LANGUAGE("browser_language"),
 
         SELENIUM_HOST("selenium_host"),
 
@@ -93,6 +93,8 @@ public class Configuration {
         BROWSERMOB_HOST("browsermob_host"),
 
         BROWSERMOB_PORT("browsermob_port"),
+        
+        BROWSERMOB_PORTS_RANGE("browsermob_ports_range"),
         
         BROWSERMOB_MITM("browsermob_disabled_mitm"),
 
@@ -217,9 +219,6 @@ public class Configuration {
 
         S3_LOCAL_STORAGE("s3_local_storage"),
 
-        // Amazon-Screenshot
-        S3_SAVE_SCREENSHOTS("s3_save_screenshots"),
-
         // HockeyApp token
         HOCKEYAPP_TOKEN("hockeyapp_token"),
 
@@ -268,9 +267,15 @@ public class Configuration {
         
         VIDEO_SCALE("video_scale"),
 
-        // Test Execution Filter rules
-        TEST_RUN_RULES("test_run_rules");
+        // Ignore SSL
+        IGNORE_SSL("ignore_ssl"),
 
+        // Test Execution Filter rules
+        TEST_RUN_RULES("test_run_rules"),
+        
+        HUB_MODE("hub_mode"),
+        
+        EXTRACT_SYS_LOG("extract_sys_log");
 
         private final String key;
 
@@ -390,6 +395,20 @@ public class Configuration {
             platform = R.CONFIG.get("capabilities.platformName");
         }
         return platform;
+    }
+    
+    public static String getBrowser() {
+        String browser = "";
+        if (!Configuration.get(Parameter.BROWSER).isEmpty()) {
+            // default "browser=value" should be used to determine current browser
+            browser = Configuration.get(Parameter.BROWSER);
+        }
+
+        // redefine browser if capabilities.browserName is available
+        if (!R.CONFIG.get("capabilities.browserName").isEmpty()) {
+            browser = R.CONFIG.get("capabilities.browserName");
+        }
+        return browser;
     }
 
     public static String getDriverType() {

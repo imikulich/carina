@@ -42,8 +42,14 @@ import io.appium.java_client.touch.WaitOptions;
 import io.appium.java_client.touch.offset.ElementOption;
 import io.appium.java_client.touch.offset.PointOption;
 
+/**
+ * @deprecated use 
+ * 				{@link com.qaprosoft.carina.core.foundation.utils.mobile.IMobileUtils}
+ * 				instead.
+ */
+@Deprecated
 public class MobileUtils {
-    protected static final Logger LOGGER = Logger.getLogger(MobileUtils.class);
+    private static final Logger LOGGER = Logger.getLogger(MobileUtils.class);
 
     public enum Direction {
         LEFT,
@@ -694,7 +700,7 @@ public class MobileUtils {
                 LOGGER.info(String.format("Current OS is %s. But we can set default TimeZone and Language only for Android.", os));
             }
         } catch (Exception e) {
-            LOGGER.error(e);
+            LOGGER.error(e.getMessage(), e);
         }
     }
     

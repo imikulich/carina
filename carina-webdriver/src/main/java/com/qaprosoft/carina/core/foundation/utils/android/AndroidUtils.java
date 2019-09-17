@@ -44,14 +44,14 @@ import io.appium.java_client.touch.offset.PointOption;
 import io.appium.java_client.windows.PressesKeyCode;
 
 /**
- * Useful Android utilities. For usage: import
- * com.qaprosoft.carina.core.foundation.utils.android.AndroidUtils;
- *
+ * @deprecated use 
+ * 			{@link com.qaprosoft.carina.core.foundation.utils.android.IAndroidUtils} 
+ * 			instead.
  */
 public class AndroidUtils extends MobileUtils {
 
 	//TODO: review carefully and remove duplicates and migrate completely to fluent waits
-    protected static final Logger LOGGER = Logger.getLogger(AndroidUtils.class);
+    private static final Logger LOGGER = Logger.getLogger(AndroidUtils.class);
     private static final int SCROLL_MAX_SEARCH_SWIPES = 55;
     private static final long SCROLL_TIMEOUT = 300;
 

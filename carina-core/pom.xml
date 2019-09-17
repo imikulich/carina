@@ -23,11 +23,6 @@
 
 		<source.version>1.8</source.version>
 		<target.version>1.8</target.version>
-
-		<cucumber.testng.version>1.2.4</cucumber.testng.version>
-		<cucumber.java.version>1.2.4</cucumber.java.version>
-		<cucumber.reporting>2.6.3</cucumber.reporting>
-
 	</properties>
 
 	<dependencies>
@@ -39,6 +34,11 @@
 		<dependency>
 			<groupId>com.qaprosoft</groupId>
 			<artifactId>carina-utils</artifactId>
+		</dependency>
+		<dependency>
+			<!-- do not remove otherwise a lot of compilation failures on test projects! -->
+			<groupId>com.qaprosoft</groupId>
+			<artifactId>carina-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.qaprosoft</groupId>
@@ -54,17 +54,71 @@
 		</dependency>
 		<dependency>
 			<groupId>com.qaprosoft</groupId>
-			<artifactId>carina-api</artifactId>
+			<artifactId>carina-aws-s3</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.qaprosoft</groupId>
+			<artifactId>carina-proxy</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
 		</dependency>
 
-		<!-- For ZafiraListener -->
 		<dependency>
-			<groupId>commons-beanutils</groupId>
-			<artifactId>commons-beanutils</artifactId>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-collections</groupId>
+			<artifactId>commons-collections</artifactId>
+		</dependency>
+
+		<!-- Zafira -->
+		<dependency>
+			<groupId>com.qaprosoft</groupId>
+			<artifactId>zafira-client</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-support</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-api</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk-s3</artifactId>
+		</dependency>
+
+		<!-- Test utilities -->
+		<dependency>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
+		</dependency>
+
+		<!-- Appium -->
+		<dependency>
+			<!-- do not remove otherwise maven warn: Used undeclared dependencies found -->
+			<groupId>io.appium</groupId>
+			<artifactId>java-client</artifactId>
 		</dependency>
 
 	</dependencies>

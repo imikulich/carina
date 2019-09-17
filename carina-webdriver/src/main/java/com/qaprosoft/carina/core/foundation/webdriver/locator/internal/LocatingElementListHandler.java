@@ -39,7 +39,7 @@ public class LocatingElementListHandler implements InvocationHandler {
     private By by;
     private final WebDriver driver;
     
-    protected static final Logger LOGGER = Logger.getLogger(LocatingElementListHandler.class);
+    private static final Logger LOGGER = Logger.getLogger(LocatingElementListHandler.class);
 
     public LocatingElementListHandler(WebDriver driver, ElementLocator locator, String name, By by) {
     	this.driver = driver;

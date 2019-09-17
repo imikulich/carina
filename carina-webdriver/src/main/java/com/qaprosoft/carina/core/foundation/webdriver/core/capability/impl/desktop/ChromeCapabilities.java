@@ -22,6 +22,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.remote.BrowserType;
 import org.openqa.selenium.remote.CapabilityType;
 import org.openqa.selenium.remote.DesiredCapabilities;
+import org.apache.log4j.Logger;
 
 import com.qaprosoft.carina.core.foundation.report.ReportContext;
 import com.qaprosoft.carina.core.foundation.utils.Configuration;
@@ -29,6 +30,8 @@ import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
 import com.qaprosoft.carina.core.foundation.webdriver.core.capability.AbstractCapabilities;
 
 public class ChromeCapabilities extends AbstractCapabilities {
+    private static final Logger LOGGER = Logger.getLogger(ChromeCapabilities.class);
+    
     public DesiredCapabilities getCapability(String testName) {
         DesiredCapabilities capabilities = new DesiredCapabilities();
         capabilities = initBaseCapabilities(capabilities, BrowserType.CHROME, testName);
@@ -40,10 +43,10 @@ public class ChromeCapabilities extends AbstractCapabilities {
         options.addArguments("test-type");
         
         //update browser language
-        String browserLocale = Configuration.get(Parameter.BROWSER_LOCALE); 
-        if (!browserLocale.isEmpty()) {
-        	LOGGER.info("Set Chrome lanaguage to: " + browserLocale);
-        	options.addArguments("--lang=" + browserLocale);
+        String browserLang = Configuration.get(Parameter.BROWSER_LANGUAGE); 
+        if (!browserLang.isEmpty()) {
+        	LOGGER.info("Set Chrome lanaguage to: " + browserLang);
+        	options.addArguments("--lang=" + browserLang);
         }
 
         if (Configuration.getBoolean(Configuration.Parameter.AUTO_DOWNLOAD)) {

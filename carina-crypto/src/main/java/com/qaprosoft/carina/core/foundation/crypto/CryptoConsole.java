@@ -20,7 +20,12 @@ import java.util.regex.Pattern;
 
 import javax.crypto.SecretKey;
 
-import org.apache.commons.cli.*;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -28,7 +33,7 @@ import org.apache.log4j.Logger;
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 
 public class CryptoConsole {
-    private static Logger LOG = Logger.getLogger(CryptoConsole.class);
+    private static final Logger LOG = Logger.getLogger(CryptoConsole.class);
 
     private static Pattern CRYPTO_PATTERN = Pattern.compile(SpecialKeywords.CRYPT);
     private static final String HELP_ARG = "help";

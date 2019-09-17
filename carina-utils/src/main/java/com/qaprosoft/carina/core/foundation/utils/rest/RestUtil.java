@@ -25,7 +25,7 @@ import com.jayway.restassured.path.json.JsonPath;
 import com.jayway.restassured.response.Response;
 
 public class RestUtil {
-    protected static final Logger LOGGER = Logger.getLogger(RestUtil.class);
+    private static final Logger LOGGER = Logger.getLogger(RestUtil.class);
 
     public static Response sendHttpPost(String contentType, String payload, String httpPostCommand) {
         return sendHttpPost(contentType, payload, httpPostCommand, true);

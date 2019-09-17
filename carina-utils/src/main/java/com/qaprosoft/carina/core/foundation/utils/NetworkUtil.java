@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 
 public class NetworkUtil {
 
-    protected static final Logger LOGGER = Logger.getLogger(NetworkUtil.class);
+    private static final Logger LOGGER = Logger.getLogger(NetworkUtil.class);
 
     public static String getIpAddress() {
         String currentIP = "0.0.0.0"; // localhost

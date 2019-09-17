@@ -28,25 +28,14 @@
 		</dependency>
 
 		<dependency>
+			<!-- do not remove below dependency as it generates 2 compilation failures -->
 			<groupId>com.qaprosoft</groupId>
-			<artifactId>carina-crypto</artifactId>
+			<artifactId>carina-aws-s3</artifactId>
 		</dependency>
 
 		<dependency>
 			<groupId>log4j</groupId>
 			<artifactId>log4j</artifactId>
-		</dependency>
-
-		<!-- carina-reporting only dependencies -->
-		<dependency>
-			<groupId>javax.mail</groupId>
-			<artifactId>mail</artifactId>
-		</dependency>
-
-		<!-- Zafira -->
-		<dependency>
-			<groupId>com.qaprosoft</groupId>
-			<artifactId>zafira-client</artifactId>
 		</dependency>
 
 		<!-- monte-repack video recording -->
@@ -56,18 +45,14 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.googlecode.json-simple</groupId>
-			<artifactId>json-simple</artifactId>
+			<groupId>org.seleniumhq.selenium</groupId>
+			<artifactId>selenium-api</artifactId>
 		</dependency>
 
+		<!-- Test utilities -->
 		<dependency>
-			<groupId>com.google.code.gson</groupId>
-			<artifactId>gson</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>commons-logging</groupId>
-			<artifactId>commons-logging</artifactId>
+			<groupId>org.testng</groupId>
+			<artifactId>testng</artifactId>
 		</dependency>
 
 	</dependencies>

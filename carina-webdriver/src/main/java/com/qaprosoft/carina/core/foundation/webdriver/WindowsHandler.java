@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.openqa.selenium.WebDriver;
 
 public class WindowsHandler {
-    protected static final Logger LOGGER = Logger.getLogger(WindowsHandler.class);
+    private static final Logger LOGGER = Logger.getLogger(WindowsHandler.class);
 
     private static Map<Integer, Set<String>> windows = new HashMap<Integer, Set<String>>();
 

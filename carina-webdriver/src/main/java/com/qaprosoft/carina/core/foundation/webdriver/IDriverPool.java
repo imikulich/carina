@@ -158,8 +158,6 @@ public interface IDriverPool {
      * @return default WebDriver
      */
     public static WebDriver getDriver(SessionId sessionId) {
-        LOGGER.debug("Detecting WebDriver by sessionId...");
-
         for (CarinaDriver carinaDriver : driversPool) {
             WebDriver drv = carinaDriver.getDriver();
             if (drv instanceof EventFiringWebDriver) {
@@ -171,12 +169,10 @@ public interface IDriverPool {
 
             if (drvSessionId != null) {
                 if (sessionId.equals(drvSessionId)) {
-                    LOGGER.debug("Detected WebDriver by sessionId: " + drvSessionId.toString());
                     return drv;
                 }
             }
         }
-
         throw new DriverPoolException("Unable to find driver using sessionId artifacts. Returning default one!");
     }
 
@@ -300,8 +296,11 @@ public interface IDriverPool {
             if (!keepProxyDuring) {
                 ProxyPool.stopProxy();
             }
+            LOGGER.debug("start driver quit: " + carinaDriver.getName());
             carinaDriver.getDriver().quit();
-            Timer.stop(carinaDriver.getDevice().getMetricName(), carinaDriver.getName());
+            LOGGER.debug("finished driver quit: " + carinaDriver.getName());
+            // stop timer to be able to track mobile app session time. It should be started on createDriver!
+            Timer.stop(carinaDriver.getDevice().getMetricName(), carinaDriver.getName() + carinaDriver.getDevice().getName());
         } catch (WebDriverException e) {
             LOGGER.debug("Error message detected during driver quit: " + e.getMessage(), e);
             // do nothing
@@ -325,15 +324,13 @@ public interface IDriverPool {
      */
     default WebDriver createDriver(String name, DesiredCapabilities capabilities, String seleniumHost) {
         // TODO: meake current method as private after migrating to java 9+
-        boolean init = false;
         int count = 0;
         WebDriver drv = null;
-        Throwable init_throwable = null;
         Device device = nullDevice;
 
         // 1 - is default run without retry
         int maxCount = Configuration.getInt(Parameter.INIT_RETRY_COUNT) + 1;
-        while (!init && count++ < maxCount) {
+        while (drv == null && count++ < maxCount) {
             try {
                 LOGGER.debug("initDriver start...");
                 
@@ -347,14 +344,13 @@ public interface IDriverPool {
                             " Override max_driver_count to allow more drivers per test!");
                 }
 
-                drv = DriverFactory.create(name, capabilities, seleniumHost);
-
                 // [VD] pay attention that similar piece of code is copied into the DriverPoolTest as registerDriver method!
                 if (currentDrivers.containsKey(name)) {
+                    // [VD] moved containsKey verification before the driver start
                     Assert.fail("Driver '" + name + "' is already registered for thread: " + threadId);
                 }
-
-                init = true;
+                
+                drv = DriverFactory.create(name, capabilities, seleniumHost);
 
                 if (device.isNull()) {
                     // During driver creation we choose device and assign it to
@@ -369,15 +365,15 @@ public interface IDriverPool {
                 // moved proxy start logic here since device will be initialized
                 // here only
                 if (Configuration.getBoolean(Parameter.BROWSERMOB_PROXY)) {
-                    int proxyPort = Configuration.getInt(Parameter.BROWSERMOB_PORT);
                     if (!device.isNull()) {
+                    	int proxyPort;
                         try {
                             proxyPort = Integer.parseInt(device.getProxyPort());
                         } catch (NumberFormatException e) {
                             // use default from _config.properties. Use-case for
                             // iOS devices which doesn't have proxy_port as part
                             // of capabilities
-                            proxyPort = Configuration.getInt(Parameter.BROWSERMOB_PORT);
+                            proxyPort = ProxyPool.getProxyPortFromConfig();
                         }
                         ProxyPool.startProxy(proxyPort);
                     }
@@ -386,7 +382,9 @@ public interface IDriverPool {
                 
                 // new 6.0 approach to manipulate drivers via regular Set
                 CarinaDriver carinaDriver = new CarinaDriver(name, drv, device, TestPhase.getActivePhase(), threadId);
-                Timer.start(device.getMetricName(), carinaDriver.getName());
+                
+                //start timer to be able to track mobile app session time. It should be stopped on quitDriver!
+                Timer.start(device.getMetricName(), carinaDriver.getName() + carinaDriver.getDevice().getName());
                 driversPool.add(carinaDriver);
 
                 LOGGER.debug("initDriver finish...");
@@ -395,16 +393,18 @@ public interface IDriverPool {
                 device.disconnectRemote();
                 //TODO: [VD] think about excluding device from pool for explicit reasons like out of space etc
                 // but initially try to implement it on selenium-hub level
-                LOGGER.error(String.format("Driver initialization '%s' FAILED! Retry %d of %d time - %s", name, count,
-                        maxCount, e.getMessage()), e);
-                init_throwable = e;
+                String msg = String.format("Driver initialization '%s' FAILED! Retry %d of %d time - %s", name, count,
+                        maxCount, e.getMessage());
+                LOGGER.error(msg, e); //TODO: test how 2 messages are displayed in logs and zafira
+                if (count == maxCount) {
+                    throw e;
+                }
                 CommonUtils.pause(Configuration.getInt(Parameter.INIT_RETRY_INTERVAL));
             }
         }
-
-        if (!init) {
-            // TODO: think about this runtime exception
-            throw new RuntimeException(init_throwable);
+        
+        if (drv == null) {
+            throw new RuntimeException("Undefined exception detected! Analyze above logs for details.");
         }
 
         return drv;
@@ -535,6 +535,9 @@ public interface IDriverPool {
 
     /**
      * Register device information for current thread by MobileFactory and clear SysLog for Android only
+     * 
+     * @param device
+     *            String Device device
      * 
      * @return Device device
      * 

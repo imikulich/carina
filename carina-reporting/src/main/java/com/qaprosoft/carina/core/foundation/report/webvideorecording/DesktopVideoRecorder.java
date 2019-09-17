@@ -63,7 +63,7 @@ public class DesktopVideoRecorder {
      */
     private ScreenRecorder screenRecorder;
 
-    protected static final Logger LOGGER = Logger.getLogger(DesktopVideoRecorder.class);
+    private static final Logger LOGGER = Logger.getLogger(DesktopVideoRecorder.class);
 
     public enum VideoFormat {
         AVI,

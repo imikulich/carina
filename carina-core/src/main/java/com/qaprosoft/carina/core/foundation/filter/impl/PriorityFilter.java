@@ -10,7 +10,7 @@ import java.util.List;
 
 public class PriorityFilter implements IFilter {
 
-    protected static final Logger LOGGER = Logger.getLogger(PriorityFilter.class);
+    private static final Logger LOGGER = Logger.getLogger(PriorityFilter.class);
 
     @Override
     public boolean isPerform(ITestNGMethod testMethod, List<String> expectedData) {

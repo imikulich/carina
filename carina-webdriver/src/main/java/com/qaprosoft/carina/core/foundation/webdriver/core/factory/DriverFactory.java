@@ -43,9 +43,12 @@ import com.qaprosoft.zafira.models.dto.TestArtifactType;
  */
 public class DriverFactory {
 
-	protected static final Logger LOGGER = Logger.getLogger(DriverFactory.class);
+    private static final Logger LOGGER = Logger.getLogger(DriverFactory.class);
 	
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("HH:mm:ss z");
+	
+	//TODO: add custom listeners for Browserstack and Saucelabs to be able to download video recordings etc
+	public enum HubType { DEFAULT, ZEBRUNNER }; 
 	
 	public static WebDriver create(String testName, DesiredCapabilities capabilities, String seleniumHost) {
 		LOGGER.debug("DriverFactory start...");
