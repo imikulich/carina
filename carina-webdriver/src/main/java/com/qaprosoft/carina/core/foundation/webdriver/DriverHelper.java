@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  *******************************************************************************/
 package com.qaprosoft.carina.core.foundation.webdriver;
 
+import java.lang.invoke.MethodHandles;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,6 @@ import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.log4j.Logger;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.Keys;
@@ -44,11 +44,11 @@ import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 import com.qaprosoft.carina.core.foundation.crypto.CryptoTool;
-import com.qaprosoft.carina.core.foundation.performance.ACTION_NAME;
-import com.qaprosoft.carina.core.foundation.performance.Timer;
 import com.qaprosoft.carina.core.foundation.utils.Configuration;
 import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
 import com.qaprosoft.carina.core.foundation.utils.LogicUtils;
@@ -65,7 +65,7 @@ import com.qaprosoft.carina.core.gui.AbstractPage;
  * @author Alex Khursevich
  */
 public class DriverHelper {
-    private static final Logger LOGGER = Logger.getLogger(DriverHelper.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     protected static final long EXPLICIT_TIMEOUT = Configuration.getLong(Parameter.EXPLICIT_TIMEOUT);
     
@@ -86,7 +86,8 @@ public class DriverHelper {
     }
 
     public DriverHelper(WebDriver driver) {
-        cryptoTool = new CryptoTool(Configuration.get(Parameter.CRYPTO_KEY_PATH));
+        this();
+        
         this.driver = driver;
 
         if (driver == null) {
@@ -713,9 +714,11 @@ public class DriverHelper {
      *            The script to execute
      * @param element
      *            The target of the script, referenced as arguments[0]
+     *            
+     * @return Object
      */
-    public void trigger(String script, WebElement element) {
-        ((JavascriptExecutor) getDriver()).executeScript(script, element);
+    public Object trigger(String script, WebElement element) {
+        return ((JavascriptExecutor) getDriver()).executeScript(script, element);
     }
 
     /**
@@ -917,7 +920,6 @@ public class DriverHelper {
 	public boolean waitUntil(ExpectedCondition<?> condition, long timeout) {
 		boolean result;
 		final WebDriver drv = getDriver();
-		Timer.start(ACTION_NAME.WAIT);
 		Wait<WebDriver> wait = new WebDriverWait(drv, timeout, RETRY_TIME).ignoring(WebDriverException.class)
 				.ignoring(NoSuchSessionException.class);
 		try {
@@ -932,7 +934,6 @@ public class DriverHelper {
 			LOGGER.error("waitUntil: " + condition.toString(), e);
 			result = false;
 		}
-		Timer.stop(ACTION_NAME.WAIT);
 		return result;
 	}
 	

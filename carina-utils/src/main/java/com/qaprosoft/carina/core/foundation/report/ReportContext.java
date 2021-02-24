@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,9 +24,15 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.invoke.MethodHandles;
+import java.net.Authenticator;
+import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -35,6 +41,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
@@ -43,6 +51,11 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.imgscalr.Scalr;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.support.events.EventFiringWebDriver;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
 
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 import com.qaprosoft.carina.core.foundation.log.ThreadLogAppender;
@@ -51,16 +64,17 @@ import com.qaprosoft.carina.core.foundation.utils.Configuration.Parameter;
 import com.qaprosoft.carina.core.foundation.utils.FileManager;
 import com.qaprosoft.carina.core.foundation.utils.R;
 import com.qaprosoft.carina.core.foundation.utils.ZipManager;
+import com.zebrunner.agent.core.registrar.Artifact;
 
 /*
  * Be careful with LOGGER usage here because potentially it could do recursive call together with ThreadLogAppender functionality
  */
 
 public class ReportContext {
-    private static final Logger LOGGER = Logger.getLogger(ReportContext.class);
+    private static final Logger LOGGER = Logger.getLogger(MethodHandles.lookup().lookupClass());
 
     public static final String ARTIFACTS_FOLDER = "artifacts";
-    
+
     private static final String GALLERY_ZIP = "gallery-lib.zip";
     private static final String REPORT_NAME = "/report.html";
     private static final int MAX_IMAGE_TITLE = 300;
@@ -82,7 +96,7 @@ public class ReportContext {
     private static final ThreadLocal<Boolean> isCustomTestDirName = new ThreadLocal<Boolean>();
 
     private static final ExecutorService executor = Executors.newCachedThreadPool();
-    
+
     // Collects screenshot comments. Screenshot comments are associated using screenshot file name.
     private static Map<String, String> screenSteps = Collections.synchronizedMap(new HashMap<String, String>());
 
@@ -118,7 +132,7 @@ public class ReportContext {
                 }
 
                 baseDirectory = baseDirectoryTmp;
-                
+
                 copyGalleryLib();
             }
         } catch (UnsupportedEncodingException e) {
@@ -154,27 +168,29 @@ public class ReportContext {
 
     public static synchronized File getArtifactsFolder() {
         if (artifactsDirectory == null) {
-        	String absolutePath = getBaseDir().getAbsolutePath();
-        	
+            String absolutePath = getBaseDir().getAbsolutePath();
+
             try {
-            	if (Configuration.get(Parameter.CUSTOM_ARTIFACTS_FOLDER).isEmpty()) {
-            		artifactsDirectory = new File(String.format("%s/%s", URLDecoder.decode(absolutePath, "utf-8"), ARTIFACTS_FOLDER));
-            	} else {
-            		artifactsDirectory = new File(Configuration.get(Parameter.CUSTOM_ARTIFACTS_FOLDER));
-            	}
+                if (Configuration.get(Parameter.CUSTOM_ARTIFACTS_FOLDER).isEmpty()) {
+                    artifactsDirectory = new File(String.format("%s/%s", URLDecoder.decode(absolutePath, "utf-8"), ARTIFACTS_FOLDER));
+                } else {
+                    artifactsDirectory = new File(Configuration.get(Parameter.CUSTOM_ARTIFACTS_FOLDER));
+                }
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException("Artifacts folder not created in base dir: " + absolutePath);
             }
-            
+
             boolean isCreated = artifactsDirectory.exists() && artifactsDirectory.isDirectory();
             if (!isCreated) {
-            		isCreated = artifactsDirectory.mkdir();
+                isCreated = artifactsDirectory.mkdir();
             } else {
-            	LOGGER.info("Artifacts folder already exists: "  + artifactsDirectory.getAbsolutePath());
+                LOGGER.info("Artifacts folder already exists: " + artifactsDirectory.getAbsolutePath());
             }
-            
+
             if (!isCreated) {
                 throw new RuntimeException("Artifacts folder not created: " + artifactsDirectory.getAbsolutePath());
+            } else {
+                LOGGER.debug(("Artifacts folder created: " + artifactsDirectory.getAbsolutePath()));
             }
         }
         return artifactsDirectory;
@@ -182,7 +198,7 @@ public class ReportContext {
 
     public static synchronized File getMetadataFolder() {
         if (metaDataDirectory == null) {
-        	String absolutePath = getBaseDir().getAbsolutePath();
+            String absolutePath = getBaseDir().getAbsolutePath();
             try {
                 metaDataDirectory = new File(String.format("%s/%s/metadata", URLDecoder.decode(absolutePath, "utf-8"), ARTIFACTS_FOLDER));
             } catch (UnsupportedEncodingException e) {
@@ -217,6 +233,141 @@ public class ReportContext {
         return Arrays.asList(getArtifactsFolder().listFiles());
     }
 
+    /**
+     * download artifact from selenoid to local java machine
+     * 
+     * @param driver WebDriver
+     * @param name String
+     * @param timeout long
+     * @return artifact File
+     */
+    public static File downloadArtifact(WebDriver driver, String name, long timeout) {
+        File file = getArtifact(name);
+        if (file == null) {
+            // attempt to verify and download file from selenoid
+
+            String url = getUrl(driver, name);
+            String username = getField(url, 1);
+            String password = getField(url, 2);
+
+            if (!artifactExists(driver, name, timeout)) {
+                Assert.fail("Unable to find artifact: " + name);
+            }
+
+            file = new File(getArtifactsFolder() + File.separator + name);
+            String path = file.getAbsolutePath();
+            LOGGER.debug("artifact file to download: " + path);
+
+            if (!username.isEmpty() && !password.isEmpty()) {
+                Authenticator.setDefault(new CustomAuthenticator(username, password));
+            }
+
+            try {
+                FileUtils.copyURLToFile(new URL(url), file);
+                LOGGER.debug("Successfully downloaded artifact: " + name);
+                Artifact.attachToTest(name, file); // publish as test artifact to Zebrunner Reporting
+            } catch (IOException e) {
+                LOGGER.error("Artifact: " + url + " wasn't downloaded to " + path, e);
+            }
+        }
+        return file;
+    }
+
+    public static class CustomAuthenticator extends Authenticator {
+
+        String username;
+        String password;
+
+        public CustomAuthenticator(String username, String password) {
+            this.username = username;
+            this.password = password;
+        }
+
+        protected PasswordAuthentication getPasswordAuthentication() {
+            return new PasswordAuthentication(username, password.toCharArray());
+        }
+    }
+
+    /**
+     * check if artifact exists
+     * 
+     * @param driver WebDriver
+     * @param name String
+     * @param timeout long
+     * @return boolean
+     */
+    public static boolean artifactExists(WebDriver driver, String name, long timeout) {
+        String url = getUrl(driver, name);
+        String username = getField(url, 1);
+        String password = getField(url, 2);
+        try {
+            return new WebDriverWait(driver, timeout).until((k) -> checkArtifactUsingHttp(url, username, password));
+        } catch (Exception e) {
+            LOGGER.debug(e);
+            return false;
+        }
+    }
+
+    /**
+     * check if artifact exists using http
+     * 
+     * @param url String
+     * @param username String
+     * @param password String
+     * @return boolean
+     */
+    private static boolean checkArtifactUsingHttp(String url, String username, String password) {
+        try {
+            HttpURLConnection.setFollowRedirects(false);
+            // note : you may also need
+            // HttpURLConnection.setInstanceFollowRedirects(false)
+            HttpURLConnection con = (HttpURLConnection) new URL(url).openConnection();
+            con.setRequestMethod("HEAD");
+
+            if (!username.isEmpty() && !password.isEmpty()) {
+                String usernameColonPassword = username + ":" + password;
+                String basicAuthPayload = "Basic " + Base64.getEncoder().encodeToString(usernameColonPassword.getBytes());
+                con.addRequestProperty("Authorization", basicAuthPayload);
+            }
+
+            return (con.getResponseCode() == HttpURLConnection.HTTP_OK);
+        } catch (Exception e) {
+            LOGGER.debug("Artifact doesn't exist: " + url, e);
+            return false;
+        }
+    }
+
+    /**
+     * get username or password from url
+     * 
+     * @param url String
+     * @param position int
+     * @return String
+     */
+    private static String getField(String url, int position) {
+        Pattern pattern = Pattern.compile(".*:\\/\\/(.*):(.*)@");
+        Matcher matcher = pattern.matcher(url);
+
+        return matcher.find() ? matcher.group(position) : "";
+
+    }
+
+    /**
+     * generate url for artifact by name
+     * 
+     * @param driver WebDriver
+     * @param name String
+     * @return String
+     */
+    private static String getUrl(WebDriver driver, String name) {
+        String seleniumHost = Configuration.get(Parameter.SELENIUM_HOST).replace("wd/hub", "download/");
+        WebDriver drv = (driver instanceof EventFiringWebDriver) ? ((EventFiringWebDriver) driver).getWrappedDriver() : driver;
+        String sessionId = ((RemoteWebDriver) drv).getSessionId().toString();
+        String url = seleniumHost + sessionId + "/" + name;
+        LOGGER.debug("url: " + url);
+        return url;
+    }
+
     public static File getArtifact(String name) {
         File artifact = null;
         for (File file : getAllArtifacts()) {
@@ -247,12 +398,16 @@ public class ReportContext {
         File artifact = new File(String.format("%s/%s", getArtifactsFolder(), name));
         artifact.createNewFile();
         FileUtils.writeByteArrayToFile(artifact, IOUtils.toByteArray(source));
+        
+        Artifact.attachToTest(name, IOUtils.toByteArray(source));
     }
 
     public static void saveArtifact(File source) throws IOException {
         File artifact = new File(String.format("%s/%s", getArtifactsFolder(), source.getName()));
         artifact.createNewFile();
         FileUtils.copyFile(source, artifact);
+        
+        Artifact.attachToTest(source.getName(), artifact);
     }
 
     /**
@@ -264,7 +419,7 @@ public class ReportContext {
     public static File getTestDir() {
         return getTestDir(StringUtils.EMPTY);
     }
-    
+
     public static File getTestDir(String dirName) {
         File testDir = testDirectory.get();
         if (testDir == null) {
@@ -273,31 +428,29 @@ public class ReportContext {
                 uniqueDirName = dirName;
             }
             String directory = String.format("%s/%s", getBaseDir(), uniqueDirName);
-            // System.out.println("First request for test dir. Just generate unique folder: " + directory);
 
             testDir = new File(directory);
-            File thumbDir = new File(testDir.getAbsolutePath() + "/thumbnails");
 
-            if (!thumbDir.mkdirs()) {
-                throw new RuntimeException("Test Folder(s) not created: " + testDir.getAbsolutePath() + " and/or " + thumbDir.getAbsolutePath());
+            if (!testDir.mkdirs()) {
+                throw new RuntimeException("Test Folder(s) not created: " + testDir.getAbsolutePath());
             }
         }
 
         testDirectory.set(testDir);
         return testDir;
     }
-    
+
     /**
      * Rename test directory from unique number to custom name.
      * 
-     * @param dirName
+     * @param dirName String
      * 
      * @return test report dir
      */
     public synchronized static File setCustomTestDirName(String dirName) {
         isCustomTestDirName.set(Boolean.FALSE);
         File testDir = testDirectory.get();
-        if(testDir == null) {
+        if (testDir == null) {
             LOGGER.debug("Test dir will be created.");
             testDir = getTestDir(dirName);
         } else {
@@ -307,14 +460,13 @@ public class ReportContext {
         isCustomTestDirName.set(Boolean.TRUE);
         return testDir;
     }
-    
+
     public static void emptyTestDirData() {
-        LOGGER.debug("testDir and isCustomTestDirName variables will be empty.");
         testDirectory.remove();
         isCustomTestDirName.set(Boolean.FALSE);
         closeThreadLogAppender();
     }
-    
+
     private static void closeThreadLogAppender() {
         try {
             ThreadLogAppender tla = (ThreadLogAppender) Logger.getRootLogger().getAppender("ThreadLogAppender");
@@ -327,7 +479,7 @@ public class ReportContext {
         }
     }
 
-    public static File renameTestDir(String test) {
+    private static File renameTestDir(String test) {
         File testDir = testDirectory.get();
         initIsCustomTestDir();
         if (testDir != null && !isCustomTestDirName.get()) {
@@ -337,20 +489,21 @@ public class ReportContext {
                 // close ThreadLogAppender resources before renaming
                 closeThreadLogAppender();
                 testDir.renameTo(newTestDir);
-                testDirectory.set(newTestDir);    
+                testDirectory.set(newTestDir);
                 LOGGER.debug("Test directory is set to : " + newTestDir);
             }
         } else {
             LOGGER.error("Unexpected case with absence of test.log for '" + test + "'");
         }
-        
+
         return testDir;
     }
-    
+
     private static void initIsCustomTestDir() {
         if (isCustomTestDirName.get() == null) {
             isCustomTestDirName.set(Boolean.FALSE);
-        };
+        }
+        ;
     }
 
     /**
@@ -401,8 +554,8 @@ public class ReportContext {
     }
 
     public static void generateHtmlReport(String content) {
-    	String emailableReport = SpecialKeywords.HTML_REPORT;
-    	
+        String emailableReport = SpecialKeywords.HTML_REPORT;
+
         try {
             File reportFile = new File(String.format("%s/%s/%s", System.getProperty("user.dir"),
                     Configuration.get(Parameter.PROJECT_REPORT_DIRECTORY), emailableReport));
@@ -418,10 +571,10 @@ public class ReportContext {
                 try {
                     bw.write(content);
                 } finally {
-					bw.close();
+                    bw.close();
                 }
             } finally {
-				fw.close();
+                fw.close();
             }
 
         } catch (IOException e) {
@@ -437,11 +590,9 @@ public class ReportContext {
     public static String getTestArtifactsLink() {
         String link = "";
         if (!Configuration.get(Parameter.REPORT_URL).isEmpty()) {
-            // remove report url and make link relative
-            // link = String.format("./%d/%s/report.html", rootID, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
             link = String.format("%s/%d/artifacts", Configuration.get(Parameter.REPORT_URL), rootID);
         } else {
-            link = String.format("file://%s/%d/artifacts", baseDirectory, rootID);
+            link = String.format("file://%s/artifacts", getBaseDirAbsolutePath());
         }
 
         return link;
@@ -451,27 +602,25 @@ public class ReportContext {
     /**
      * Returns URL for test screenshot folder.
      * 
-     * @param test
-     *            test name
      * @return - URL for test screenshot folder.
      */
-    public static String getTestScreenshotsLink(String test) {
-        // TODO: find unified solution for screenshots presence determination. Combine it with
-        // AbstractTestListener->createTestResult code
+    public static String getTestScreenshotsLink() {
         String link = "";
-        if (FileUtils.listFiles(ReportContext.getTestDir(), new String[] { "png" }, false).isEmpty()) {
-            // no png screenshot files at all
-            return link;
+        try {
+            if (FileUtils.listFiles(ReportContext.getTestDir(), new String[] { "png" }, false).isEmpty()) {
+                // no png screenshot files at all
+                return link;
+            }
+        } catch (Exception e) {
+            LOGGER.error("Exception during report directory scanning", e);
         }
-
-        // TODO: remove reference using "String test" argument
+        
+        String test = testDirectory.get().getName().replaceAll("[^a-zA-Z0-9.-]", "_");
+        
         if (!Configuration.get(Parameter.REPORT_URL).isEmpty()) {
-            // remove report url and make link relative
-            // link = String.format("./%d/%s/report.html", rootID, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
-            link = String.format("%s/%d/%s/report.html", Configuration.get(Parameter.REPORT_URL), rootID, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
+            link = String.format("%s/%d/%s/report.html", Configuration.get(Parameter.REPORT_URL), rootID, test);
         } else {
-            // TODO: it seems like defect
-            link = String.format("file://%s/%s/report.html", baseDirectory, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
+            link = String.format("file://%s/%s/report.html", getBaseDirAbsolutePath(), test);
         }
 
         return link;
@@ -479,14 +628,33 @@ public class ReportContext {
     }
 
     /**
-     * Returns URL for test log.
+     * Returns list of links to video in local file system for recorded driver sessions
      * 
-     * @param test
-     *            test name
+     * @param sessionIds
+     *            String list of session Ids to find video files for
+     * @return
+     *         String list of generated links
+     */
+    public static List<String> getTestVideoLinks(List<String> sessionIds) {
+        List<String> links = new ArrayList<>();
+        for (String sessionId : sessionIds) {
+            String videoFileName = String.format(SpecialKeywords.DEFAULT_VIDEO_FILENAME, sessionId);
+            File videoFile = new File(ReportContext.getArtifactsFolder() + File.separator + videoFileName);
+            if (!videoFile.exists()) {
+                // no video file at all
+                continue;
+            }
+
+            links.add(getTestArtifactsLink() + File.separator + videoFileName);
+        }
+        return links;
+    }
+
+    /**
+     * Returns URL for test log.
      * @return - URL to test log folder.
      */
-    // TODO: refactor removing "test" argument
-    public static String getTestLogLink(String test) {
+    public static String getTestLogLink() {
         String link = "";
         File testLogFile = new File(ReportContext.getTestDir() + "/" + "test.log");
         if (!testLogFile.exists()) {
@@ -494,65 +662,28 @@ public class ReportContext {
             return link;
         }
 
+        String test = testDirectory.get().getName().replaceAll("[^a-zA-Z0-9.-]", "_");
         if (!Configuration.get(Parameter.REPORT_URL).isEmpty()) {
-            // remove report url and make link relative
-            // link = String.format("./%d/%s/test.log", rootID, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
-            link = String.format("%s/%d/%s/test.log", Configuration.get(Parameter.REPORT_URL), rootID, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
+            link = String.format("%s/%d/%s/test.log", Configuration.get(Parameter.REPORT_URL), rootID, test);
         } else {
-            // TODO: it seems like defect
-            link = String.format("file://%s/%s/test.log", baseDirectory, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
+            link = String.format("file://%s/%s/test.log", getBaseDirAbsolutePath(), test);
         }
 
-        return link;
-    }
-    
-//    TODO: refactor as soon as getLogLink will be updated
-    public static String getSysLogLink(String test) {
-        String link = "";
-        File testLogFile = new File(ReportContext.getTestDir() + "/" + "logcat.log");
-        if (!testLogFile.exists()) {
-            // no test.log file at all
-            return link;
-        }
-
-        if (!Configuration.get(Parameter.REPORT_URL).isEmpty()) {
-            link = String.format("%s/%d/%s/logcat.log", Configuration.get(Parameter.REPORT_URL), rootID, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
-        } else {
-            link = String.format("file://%s/%s/logcat.log", baseDirectory, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
-        }
-        LOGGER.debug("Extracted syslog link: ".concat(link));
-        return link;
-    }
-    
-    // TODO: refactor as soon as getLogLink will be updated
-    public static String getUIxLink(String test, String uixFileName) {
-        String link = "";
-        File testLogFile = new File(ReportContext.getTestDir() + "/" + uixFileName);
-        if (!testLogFile.exists()) {
-            // no test.log file at all
-            return link;
-        }
-
-        if (!Configuration.get(Parameter.REPORT_URL).isEmpty()) {
-            link = String.format("%s/%d/%s/".concat(uixFileName), Configuration.get(Parameter.REPORT_URL), rootID, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
-        } else {
-            link = String.format("file://%s/%s/".concat(uixFileName), baseDirectory, test.replaceAll("[^a-zA-Z0-9.-]", "_"));
-        }
-        LOGGER.info("Extracted uix link: ".concat(link));
         return link;
     }
 
     /**
      * Returns URL for cucumber report.
+     * 
      * @return - URL to test log folder.
      */
     public static String getCucumberReportLink() {
 
         String folder = SpecialKeywords.CUCUMBER_REPORT_FOLDER;
         String subFolder = SpecialKeywords.CUCUMBER_REPORT_SUBFOLDER;
-        
+        String fileName = SpecialKeywords.CUCUMBER_REPORT_FILE_NAME;
+
         String link = "";
-        // String subfolder = "cucumber-html-reports";
         if (!Configuration.get(Parameter.REPORT_URL).isEmpty()) {
             // remove report url and make link relative
             // link = String.format("./%d/report.html", rootID);
@@ -561,27 +692,26 @@ public class ReportContext {
                 LOGGER.error("Contains n/a. Replace it.");
                 report_url = report_url.replace("n/a", "");
             }
-            link = String.format("%s/%d/%s/%s/%s/feature-overview.html", report_url, rootID, ARTIFACTS_FOLDER, folder, subFolder);
+            link = String.format("%s/%d/%s/%s/%s", report_url, rootID, folder, subFolder, fileName);
         } else {
-            link = String.format("file://%s/%s/%s/feature-overview.html", artifactsDirectory, folder, subFolder);
+            link = String.format("file://%s/%s/%s/%s", getBaseDirAbsolutePath(), folder, subFolder, fileName);
         }
 
         return link;
     }
 
     /**
-     * Saves screenshot with thumbnail.
+     * Saves screenshot.
      * 
      * @param screenshot - {@link BufferedImage} file to save
+     * 
+     * @return - screenshot name.
      */
     public static String saveScreenshot(BufferedImage screenshot) {
         long now = System.currentTimeMillis();
 
         executor.execute(new ImageSaverTask(screenshot, String.format("%s/%d.png", getTestDir().getAbsolutePath(), now),
                 Configuration.getInt(Parameter.BIG_SCREEN_WIDTH), Configuration.getInt(Parameter.BIG_SCREEN_HEIGHT)));
-
-        executor.execute(new ImageSaverTask(screenshot, String.format("%s/thumbnails/%d.png", getTestDir().getAbsolutePath(), now),
-                Configuration.getInt(Parameter.SMALL_SCREEN_WIDTH), Configuration.getInt(Parameter.SMALL_SCREEN_HEIGHT)));
 
         return String.format("%d.png", now);
     }
@@ -621,12 +751,16 @@ public class ReportContext {
             }
         }
     }
-    
+
     private static void copyGalleryLib() {
         File reportsRootDir = new File(System.getProperty("user.dir") + "/" + Configuration.get(Parameter.PROJECT_REPORT_DIRECTORY));
         if (!new File(reportsRootDir.getAbsolutePath() + "/gallery-lib").exists()) {
             try {
                 InputStream is = ClassLoader.getSystemClassLoader().getResourceAsStream(GALLERY_ZIP);
+                if (is == null) {
+                    LOGGER.warn("Unable to find in classpath: " + GALLERY_ZIP);
+                    return;
+                }
                 ZipManager.copyInputStream(is, new BufferedOutputStream(new FileOutputStream(reportsRootDir.getAbsolutePath() + "/"
                         + GALLERY_ZIP)));
                 ZipManager.unzip(reportsRootDir.getAbsolutePath() + "/" + GALLERY_ZIP, reportsRootDir.getAbsolutePath());
@@ -640,13 +774,12 @@ public class ReportContext {
 
     public static void generateTestReport() {
         File testDir = testDirectory.get();
-        List<File> images = FileManager.getFilesInDir(testDir);
         try {
+            List<File> images = FileManager.getFilesInDir(testDir);
             List<String> imgNames = new ArrayList<String>();
             for (File image : images) {
                 imgNames.add(image.getName());
             }
-            imgNames.remove("thumbnails");
             imgNames.remove("test.log");
             imgNames.remove("sql.log");
             if (imgNames.size() == 0)
@@ -660,7 +793,6 @@ public class ReportContext {
                 String image = R.REPORT.get("image");
 
                 image = image.replace("${image}", imgNames.get(i));
-                image = image.replace("${thumbnail}", imgNames.get(i));
 
                 String title = getScreenshotComment(imgNames.get(i));
                 if (title == null) {
@@ -704,6 +836,13 @@ public class ReportContext {
         if (screenSteps.containsKey(screenId))
             comment = screenSteps.get(screenId);
         return comment;
+    }
+
+    private static String getBaseDirAbsolutePath() {
+        if (baseDirectory != null) {
+            return baseDirectory.getAbsolutePath();
+        }
+        return null;
     }
 
 }

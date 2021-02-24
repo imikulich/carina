@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,12 @@ public class ThreadLogAppender extends AppenderSkeleton {
                 String logLevel = event.getLevel().toString();
 
                 String message = "[%s] [%s] [%s] [%s] %s";
-                message = String.format(message, time, fileName, threadId, logLevel, event.getMessage().toString());
+                String eventMessage = "";
+                if (event != null && event.getMessage() != null) {
+                    eventMessage = event.getMessage().toString();
+                }
+                
+                message = String.format(message, time, fileName, threadId, logLevel, eventMessage);
                 ensureCapacity(message.length());
                 fw.write(message);
             } else {
@@ -113,7 +118,8 @@ public class ThreadLogAppender extends AppenderSkeleton {
 
     private void ensureCapacity(int len) throws IOException {
         long newBytesWritten = this.bytesWritten + len;
-		long maxMegaBytes = Configuration.getLong(Parameter.MAX_LOG_FILE_SIZE) * 1024 * 1024;
+        long maxMegaBytes = Configuration.getLong(Parameter.MAX_LOG_FILE_SIZE) * 1024 * 1024;
+
         if (newBytesWritten > maxMegaBytes)
             throw new IOException("test Log file size exceeded core limit: " + newBytesWritten + " > " + maxMegaBytes);
         this.bytesWritten = newBytesWritten;

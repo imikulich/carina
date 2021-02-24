@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,15 @@
 package com.qaprosoft.carina.core.foundation.report.email;
 
 import java.io.File;
+import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 import com.qaprosoft.carina.core.foundation.report.ReportContext;
@@ -38,7 +40,7 @@ import com.qaprosoft.carina.core.foundation.utils.R;
  * @author Alex Khursevich
  */
 public class EmailReportGenerator {
-    private static final Logger LOGGER = Logger.getLogger(EmailReportGenerator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private static String CONTAINER = R.EMAIL.get("container");
     private static String PACKAGE_TR = R.EMAIL.get("package_tr");
@@ -71,15 +73,18 @@ public class EmailReportGenerator {
     private static final String SKIP_REASON_PLACEHOLDER = "${skip_reason}";
     private static final String FAIL_CONFIG_REASON_PLACEHOLDER = "${fail_config_reason}";
     private static final String SCREENSHOTS_URL_PLACEHOLDER = "${screenshots_url}";
+    private static final String VIDEO_URL_PLACEHOLDER = "${video_url_html}";
     private static final String LOG_URL_PLACEHOLDER = "${log_url}";
     private static final String CREATED_ITEMS_LIST_PLACEHOLDER = "${created_items_list}";
     private static final String CREATED_ITEM_PLACEHOLDER = "${created_item}";
     private static final String BUG_URL_PLACEHOLDER = "${bug_url}";
-    private static final String BUG_ID_PLACEHOLDER = "${bug_id}";
     private static final int MESSAGE_LIMIT = R.EMAIL.getInt("fail_description_limit");
     
     // Cucumber section
     private static final String CUCUMBER_RESULTS_PLACEHOLDER = "${cucumber_results}";
+
+    // Artifacts section
+    private static final String ARTIFACTS_RESULTS_PLACEHOLDER = "${artifacts}";
 
     private static boolean INCLUDE_PASS = R.EMAIL.getBoolean("include_pass");
     private static boolean INCLUDE_FAIL = R.EMAIL.getBoolean("include_fail");
@@ -108,7 +113,10 @@ public class EmailReportGenerator {
         emailBody = emailBody.replace(CREATED_ITEMS_LIST_PLACEHOLDER, getCreatedItemsList(createdItems));
         
         // Cucumber section
-        emailBody = emailBody.replace(CUCUMBER_RESULTS_PLACEHOLDER, getCucumberResults());
+        emailBody = emailBody.replace(CUCUMBER_RESULTS_PLACEHOLDER, getCucumberResultsHTML());
+
+        // Artifacts section
+        emailBody = emailBody.replace(ARTIFACTS_RESULTS_PLACEHOLDER, getArtifactsLinkHTML());
     }
 
     public String getEmailBody() {
@@ -186,8 +194,7 @@ public class EmailReportGenerator {
         }
         if (testResultItem.getResult().name().equalsIgnoreCase("SKIP")) {
             failReason = testResultItem.getFailReason();
-            if (!testResultItem.isConfig() && !failReason.contains(SpecialKeywords.ALREADY_PASSED)
-                    && !failReason.contains(SpecialKeywords.SKIP_EXECUTION)) {
+            if (!testResultItem.isConfig()) {
                 if (INCLUDE_SKIP) {
                     result = testResultItem.getLinkToScreenshots() != null ? SKIP_TEST_LOG_DEMO_TR : SKIP_TEST_LOG_TR;
                     result = result.replace(TEST_NAME_PLACEHOLDER, testResultItem.getTest());
@@ -227,32 +234,29 @@ public class EmailReportGenerator {
             }
         }
 
+        // putting of video URLs
+        String videoHTML = "";
+        List<String> videoLinks = testResultItem.getLinksToVideo();
+        for (int i = 0; i < videoLinks.size(); i++) {
+            videoHTML = videoHTML.concat(String.format("<span> | </span><a target='_blank' href='%s' style='color: white'>%s</a>", videoLinks.get(i),
+                    (videoLinks.size() > 1) ? "Video_" + (i + 1) : "Video"));
+        }
+        result = result.replace(VIDEO_URL_PLACEHOLDER, videoHTML);
+
+        // generate valid url or just a number
         List<String> jiraTickets = testResultItem.getJiraTickets();
-
-        String bugId = null;
-        String bugUrl = null;
-
-        if (jiraTickets.size() > 0) {
-            bugId = jiraTickets.get(0);
-
+        String bugUrl = "";
+        for (String bugId : jiraTickets) {
             if (!Configuration.get(Parameter.JIRA_URL).isEmpty()) {
-                bugUrl = Configuration.get(Parameter.JIRA_URL) + "/browse/" + jiraTickets.get(0);
+                bugUrl += "<a target='_blank' href='" + Configuration.get(Parameter.JIRA_URL) + "/browse/" + bugId + "' style='color: white;'>"
+                        + bugId + "</a>";
+            } else {
+                bugUrl += bugId;
             }
-
-            if (jiraTickets.size() > 1) {
-                LOGGER.error("Current implementation doesn't support email report generation with several Jira Tickets fo single test!");
-            }
+            bugUrl += "<br>";
         }
-        if (bugId == null) {
-            bugId = "N/A";
-        }
-
-        if (bugUrl == null) {
-            bugUrl = "#";
-        }
-        result = result.replace(BUG_ID_PLACEHOLDER, bugId);
         result = result.replace(BUG_URL_PLACEHOLDER, bugUrl);
-
+        
         return result;
     }
 
@@ -289,14 +293,7 @@ public class EmailReportGenerator {
                 }
                 break;
             case SKIP:
-                if (ri.getFailReason().startsWith(SpecialKeywords.ALREADY_PASSED)) {
-                    skipped_already_passed++;
-                } else if (ri.getFailReason().startsWith(SpecialKeywords.SKIP_EXECUTION)) {
-                    // don't calculate such message at all as it shouldn't be
-                    // included into the report at all
-                } else {
-                    skipped++;
-                }
+                skipped++;
                 break;
             case SKIP_ALL:
                 // do nothing
@@ -347,14 +344,36 @@ public class EmailReportGenerator {
         return reasonText;
     }
 
-    private String getCucumberResults() {
+    /**
+     * Get HTML block for link to artifacts folder in local file system
+     * 
+     * @return generated HTML block
+     */
+    private String getArtifactsLinkHTML() {
+        String result = "";
+
+        if (!ReportContext.getAllArtifacts().isEmpty()) {
+
+            String link = ReportContext.getTestArtifactsLink();
+            LOGGER.debug("Artifacts gallery link: " + link);
+            result = String.format(
+                    "<br/><b><a href='%s' style='color: black;' target='_blank' style='display: block'> Open Artifacts gallery in a new tab</a></b><br/>",
+                    link);
+            LOGGER.debug("Artifacts gallery: " + result);
+        }
+
+        return result;
+    }
+
+    private String getCucumberResultsHTML() {
         String result = "";
 
         if (isCucumberReportFolderExists()) {
 
             String link = ReportContext.getCucumberReportLink();
             LOGGER.debug("Cucumber Report link: " + link);
-            result = String.format("<br/><b><a href='%s' style='color: green;' target='_blank'> Open Cucumber Report in new Window </a></b><br/>",
+            result = String.format(
+                    "<br/><b><a href='%s' style='color: green;' target='_blank' style='display: block'> Open Cucumber Report in a new tab</a></b><br/>",
                     link);
             LOGGER.debug("Cucumber result: " + result);
         }
@@ -369,7 +388,7 @@ public class EmailReportGenerator {
      */
     private boolean isCucumberReportFolderExists() {
         try {
-            File reportOutputDirectory = new File(String.format("%s/%s", ReportContext.getArtifactsFolder(), SpecialKeywords.CUCUMBER_REPORT_FOLDER));
+            File reportOutputDirectory = new File(String.format("%s/%s", ReportContext.getBaseDir(), SpecialKeywords.CUCUMBER_REPORT_FOLDER));
             if (reportOutputDirectory.exists() && reportOutputDirectory.isDirectory()) {
                 if (reportOutputDirectory.list().length > 0) {
                     LOGGER.debug("Cucumber Report Folder is not empty!");

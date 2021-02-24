@@ -6,12 +6,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.jayway.restassured.path.xml.XmlPath;
 
 public class JenkinsClient {
-    protected static final Logger LOGGER = Logger.getLogger(JenkinsClient.class);
+    private static final Logger LOGGER = Logger.getLogger(JenkinsClient.class);
 
     private static final String JOB = "%s/job/%s/%s/console";
     private static final String JOB_API = "%s/job/%s/api/xml?depth=1";

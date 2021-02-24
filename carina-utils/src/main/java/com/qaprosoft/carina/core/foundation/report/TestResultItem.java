@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ public class TestResultItem {
     private String test = null;
     private String linkToLog = null;
     private String linkToScreenshots = null;
+    private List<String> linksToVideo = null;
     private String failReason = null;
     private String description = null;
     private List<String> jiraTickets = new ArrayList<String>(); // empty list
@@ -31,12 +32,14 @@ public class TestResultItem {
 
     private boolean config = false;
 
-    public TestResultItem(String group, String test, TestResultType result, String linkToScreenshots, String linkToLog, String failReason) {
+    public TestResultItem(String group, String test, TestResultType result, String linkToScreenshots, String linkToLog, List<String> linksToVideo,
+            String failReason) {
         this.pack = group;
         this.test = test;
         this.result = result;
         this.linkToLog = linkToLog;
         this.linkToScreenshots = linkToScreenshots;
+        this.linksToVideo = linksToVideo;
         this.failReason = failReason;
     }
 
@@ -44,40 +47,28 @@ public class TestResultItem {
         return pack;
     }
 
-    public void setPack(String pack) {
-        this.pack = pack;
-    }
-
     public String getTest() {
         return test;
-    }
-
-    public void setTest(String test) {
-        this.test = test;
     }
 
     public TestResultType getResult() {
         return result;
     }
 
-    public void setResult(TestResultType result) {
-        this.result = result;
-    }
-
     public String getLinkToLog() {
         return linkToLog;
-    }
-
-    public void setLinkToLog(String linkToLog) {
-        this.linkToLog = linkToLog;
     }
 
     public String getLinkToScreenshots() {
         return linkToScreenshots;
     }
 
-    public void setLinkToScreenshots(String linkToScreenshots) {
-        this.linkToScreenshots = linkToScreenshots;
+    public List<String> getLinksToVideo() {
+        return linksToVideo;
+    }
+
+    public void setLinksToVideo(List<String> linksToVideo) {
+        this.linksToVideo = linksToVideo;
     }
 
     public String getFailReason() {
@@ -89,10 +80,7 @@ public class TestResultItem {
 
     }
 
-    public void setFailReason(String failReason) {
-        this.failReason = failReason;
-    }
-
+    //TODO: move description init into the constructor
     public String getDescription() {
         return description;
     }

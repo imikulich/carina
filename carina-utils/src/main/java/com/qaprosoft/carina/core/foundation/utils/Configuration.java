@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,15 @@
  *******************************************************************************/
 package com.qaprosoft.carina.core.foundation.utils;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.openqa.selenium.remote.DesiredCapabilities;
-import org.apache.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
 
@@ -33,7 +34,7 @@ import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
  *         hursevich@gmail.com
  */
 public class Configuration {
-    private static final Logger LOGGER = Logger.getLogger(Configuration.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private static IEnvArgResolver envArgResolver;
 
     static {
@@ -64,21 +65,35 @@ public class Configuration {
 
         ENV_ARG_RESOLVER("env_arg_resolver"),
 
-        PLATFORM("platform"),
-
         BROWSER("browser"),
 
         BROWSER_VERSION("browser_version"),
-        
+
         BROWSER_LANGUAGE("browser_language"),
 
         SELENIUM_HOST("selenium_host"),
 
+        DRIVER_RECORDER("driver_recorder"),
+        
         DRIVER_EVENT_LISTENERS("driver_event_listeners"),
 
         MAX_DRIVER_COUNT("max_driver_count"),
+        
+        FORCIBLY_DISABLE_DRIVER_QUIT("forcibly_disable_driver_quit"),
 
         CUSTOM_CAPABILITIES("custom_capabilities"),
+        
+        CHROME_ARGS("chrome_args"),
+        
+        CHROME_EXPERIMENTAL_OPTS("chrome_experimental_opts"),
+        
+        CHROME_MOBILE_EMULATION_OPTS("chrome_mobile_emulation_opts"),
+        
+        FIREFOX_ARGS("firefox_args"),
+        
+        FIREFOX_PREFERENCES("firefox_preferences"),
+
+        HEADLESS("headless"),
 
         APP_VERSION("app_version"),
 
@@ -87,41 +102,34 @@ public class Configuration {
         PROXY_PORT("proxy_port"),
 
         PROXY_PROTOCOLS("proxy_protocols"),
+        
+        NO_PROXY("no_proxy"),
 
         BROWSERMOB_PROXY("browsermob_proxy"),
-        
-        BROWSERMOB_HOST("browsermob_host"),
 
         BROWSERMOB_PORT("browsermob_port"),
-        
+
         BROWSERMOB_PORTS_RANGE("browsermob_ports_range"),
-        
+
         BROWSERMOB_MITM("browsermob_disabled_mitm"),
 
         PROXY_SET_TO_SYSTEM("proxy_set_to_system"),
 
         REPORT_URL("report_url"),
 
-        EMAIL_LIST("email_list"),
-
-        FAILURE_EMAIL_LIST("failure_email_list"),
-
         TRACK_KNOWN_ISSUES("track_known_issues"),
 
         AUTO_SCREENSHOT("auto_screenshot"),
-
-        SMART_SCREENSHOT("smart_screenshot"),
-
-        //TODO: temporary restore to keep compilation. remove later
-        IMPLICIT_TIMEOUT("implicit_timeout"),
 
         EXPLICIT_TIMEOUT("explicit_timeout"),
 
         AUTO_DOWNLOAD("auto_download"),
 
         AUTO_DOWNLOAD_APPS("auto_download_apps"),
-        
-    	CUSTOM_ARTIFACTS_FOLDER("custom_artifacts_folder"),
+
+        AUTO_DOWNLOAD_FOLDER("auto_download_folder"),
+
+        CUSTOM_ARTIFACTS_FOLDER("custom_artifacts_folder"),
 
         RETRY_INTERVAL("retry_interval"),
 
@@ -137,10 +145,6 @@ public class Configuration {
 
         BIG_SCREEN_HEIGHT("big_screen_height"),
 
-        SMALL_SCREEN_WIDTH("small_screen_width"),
-
-        SMALL_SCREEN_HEIGHT("small_screen_height"),
-
         INIT_RETRY_COUNT("init_retry_count"),
 
         INIT_RETRY_INTERVAL("init_retry_interval"),
@@ -153,19 +157,13 @@ public class Configuration {
 
         LOCALE("locale"),
 
-        ENABLE_I18N("enable_i18n"),
-
-        LANGUAGE("language"),
-
         THREAD_COUNT("thread_count"),
 
         DATA_PROVIDER_THREAD_COUNT("data_provider_thread_count"),
 
         CORE_LOG_LEVEL("core_log_level"),
-        
+
         CORE_LOG_PACKAGES("core_log_packages"),
-        
-        ARTIFACTS_EXPIRATION_SECONDS("artifacts_expiration_seconds"),
 
         LOG_ALL_JSON("log_all_json"),
 
@@ -177,38 +175,15 @@ public class Configuration {
 
         SUITE_NAME("suite_name"),
 
-        JIRA_UPDATER("jira_updater"),
-
         JIRA_URL("jira_url"),
 
-        JIRA_USER("jira_user"),
-
-        JIRA_PASSWORD("jira_password"),
-
-        JIRA_SUITE_ID("jira_suite_id"),
-
-        JIRA_PROJECT("jira_project"),
-
-        JIRA_PROJECT_SHORT("jira_project_short"),
-
-        JIRA_CREATE_NEW_TICKET("jira_create_new_ticket"),
-
         TEST_NAMING_PATTERN("test_naming_pattern"),
-
-        // Enable video recording capabilities only for the final retry attempt
-        OPTIMIZE_VIDEO_RECORDING("optimize_video_recording"),
-
-        // TestRail
-        TESTRAIL_RUN_NAME("testrail_run_name"),
         
-        TESTRAIL_MILESTONE("testrail_milestone"),
+        ELEMENT_LOADING_STRATEGY("element_loading_strategy"),
+        
+        PAGE_OPENING_STRATEGY("page_opening_strategy"),
 
-        TESTRAIL_ASSIGNEE_USER("testrail_assignee"),
-        
-        // qTest
-        QTEST_CYCLE_NAME("qtest_cycle_name"),
-        
-        QTEST_SUITE_NAME("qtest_suite_name"),
+        APP_PRESIGN_URL("app_presign_url"),
         
         // Amazon
         S3_BUCKET_NAME("s3_bucket_name"),
@@ -217,12 +192,14 @@ public class Configuration {
 
         SECRET_KEY("secret_key"),
 
+        S3_USE_PRESIGN_URL("s3_use_presign_url"),
+        
         S3_LOCAL_STORAGE("s3_local_storage"),
 
-        // HockeyApp token
-        HOCKEYAPP_TOKEN("hockeyapp_token"),
+        // AppCenter token
+        APPCENTER_TOKEN("appcenter_token"),
 
-        HOCKEYAPP_LOCAL_STORAGE("hockeyapp_local_storage"),
+        APPCENTER_LOCAL_STORAGE("appcenter_local_storage"),
 
         // For localization parser
         ADD_NEW_LOCALIZATION("add_new_localization"),
@@ -249,33 +226,29 @@ public class Configuration {
         DEFAULT_DEVICE_TIME_FORMAT("default_device_time_format"),
 
         DEFAULT_DEVICE_LANGUAGE("default_device_language"),
-        
-        //For screen recording
+
+        // For screen recording
         ANDROID_SCREEN_RECORDING_SIZE("android_screen_record_size"),
-        
+
         ANDROID_SCREEN_RECORDING_BITRATE("android_screen_record_bitrate"),
-        
+
         ANDROID_ENABLE_BUG_REPORT("android_enable_bug_report"),
-        
+
         IOS_SCREEN_RECORDING_QUALITY("ios_screen_record_quality"),
-        
+
         IOS_SCREEN_RECORDING_CODEC("ios_screen_record_codec"),
-        
+
         IOS_SCREEN_RECORDING_FPS("ios_screen_record_fps"),
-        
+
         SCREEN_RECORD_DURATION("screen_record_duration"),
-        
+
         VIDEO_SCALE("video_scale"),
 
         // Ignore SSL
         IGNORE_SSL("ignore_ssl"),
 
         // Test Execution Filter rules
-        TEST_RUN_RULES("test_run_rules"),
-        
-        HUB_MODE("hub_mode"),
-        
-        EXTRACT_SYS_LOG("extract_sys_log");
+        TEST_RUN_RULES("test_run_rules");
 
         private final String key;
 
@@ -314,32 +287,23 @@ public class Configuration {
     }
 
     public static boolean getBoolean(Parameter param) {
-        return Boolean.valueOf(get(param).trim());
-    }
-
-    @Deprecated
-    public static Locale getLocale() {
-        Locale locale = null;
-        if (!StringUtils.isEmpty(get(Parameter.LOCALE))) {
-            if (Configuration.get(Parameter.LOCALE).contains("_")) {
-                locale = new Locale(get(Parameter.LOCALE).split("_")[0], get(Parameter.LOCALE).split("_")[1]);
-            } else {
-                locale = new Locale("", get(Parameter.LOCALE));
-            }
+        String value = get(param).trim();
+        if (value == null || value.equalsIgnoreCase(SpecialKeywords.NULL)) {
+            return false;
         }
-        return locale;
+        return Boolean.valueOf(value);
     }
 
     public static String asString() {
         StringBuilder asString = new StringBuilder();
         asString.append("\n============= Test configuration =============\n");
         for (Parameter param : Parameter.values()) {
-            if (!Parameter.CRYPTO_KEY_PATH.equals(param)) {
+            if (!Parameter.CRYPTO_KEY_PATH.equals(param) && !Configuration.get(param).isEmpty()) {
                 asString.append(String.format("%s=%s%n", param.getKey(), Configuration.get(param)));
             }
         }
 
-        //write into the log extra information about selenium_host together with capabilities
+        // write into the log extra information about selenium_host together with capabilities
         asString.append(String.format("%s=%s%n", "selenium_host", R.CONFIG.get("selenium_host")));
         asString.append("\n------------- Driver capabilities -----------\n");
         // read all properties from config.properties and use "capabilities.*"
@@ -381,22 +345,76 @@ public class Configuration {
         return get(param).isEmpty();
     }
 
-    public static String getPlatform() {
-        // default "platform=value" should be used to determine current platform
-        String platform = Configuration.get(Parameter.PLATFORM);
+    /**
+     * Get capabilities.adbExecTimeout from configuration properties.
+     * if it is missing return the default value
+     * @return int capabilities.adbExecTimeout
+     */
+    public static int getAdbExecTimeout() {
+        // default "capabilities.adbExecTimeout=value" should be used to determine current platform
+        int adbExecTimeout = SpecialKeywords.DEFAULT_ADB_EXEC_TIMEOUT;
 
-        // redefine platform if capabilities.platform is available
-        if (!R.CONFIG.get("capabilities.platform").isEmpty()) {
-            platform = R.CONFIG.get("capabilities.platform");
+        // redefine adb exec timeout if capabilities.AdbExecTimeout is available
+        if (!R.CONFIG.get(SpecialKeywords.ADB_EXEC_TIMEOUT).isEmpty()) {
+            adbExecTimeout = R.CONFIG.getInt(SpecialKeywords.ADB_EXEC_TIMEOUT);
         }
+
+        return adbExecTimeout;
+    }
+
+    /**
+     * Get platform name from configuration properties.
+     * @return String platform name
+     */
+    public static String getPlatform() {
+        return getPlatform(new DesiredCapabilities());
+    }
+
+    /**
+     * Get platform name from configuration properties or DesiredCapabilities.
+     * @param caps
+     *            DesiredCapabilities
+     * @return String platform name
+     */
+    public static String getPlatform(DesiredCapabilities caps) {
+        // any platform by default
+        String platform = "*";
 
         // redefine platform if mobile.platformName is available
-        if (!R.CONFIG.get("capabilities.platformName").isEmpty()) {
-            platform = R.CONFIG.get("capabilities.platformName");
+        if (!R.CONFIG.get(SpecialKeywords.PLATFORM).isEmpty()) {
+            platform = R.CONFIG.get(SpecialKeywords.PLATFORM);
         }
+        
+        // redefine platform if mobile.platformName is available
+        if (!R.CONFIG.get(SpecialKeywords.PLATFORM_NAME).isEmpty()) {
+            platform = R.CONFIG.get(SpecialKeywords.PLATFORM_NAME);
+        }
+        
+        if (caps != null && caps.getCapability("platform") != null) {
+            platform = caps.getCapability("platform").toString();
+        }
+
+        if (caps != null && caps.getCapability("platformName") != null) {
+            platform = caps.getCapability("platformName").toString();
+        }        
+        
+        //TODO: try to get actual platform name
         return platform;
     }
     
+    public static String getPlatformVersion() {
+        // default "os_version=value" should be used to determine current platform
+        String platformVersion = "";
+
+        // redefine platform if mobile.platformVersion is available
+        if (!R.CONFIG.get(SpecialKeywords.PLATFORM_VERSION).isEmpty()) {
+            platformVersion = R.CONFIG.get(SpecialKeywords.PLATFORM_VERSION);
+        }
+        
+        //TODO: try to get actual platform version
+        return platformVersion;
+    }
+
     public static String getBrowser() {
         String browser = "";
         if (!Configuration.get(Parameter.BROWSER).isEmpty()) {
@@ -405,54 +423,78 @@ public class Configuration {
         }
 
         // redefine browser if capabilities.browserName is available
-        if (!R.CONFIG.get("capabilities.browserName").isEmpty()) {
+        if (!R.CONFIG.get("capabilities.browserName").isEmpty() && !"null".equalsIgnoreCase(R.CONFIG.get("capabilities.browserName"))) {
             browser = R.CONFIG.get("capabilities.browserName");
         }
         return browser;
+    }
+    
+    public static String getBrowserVersion() {
+        String browserVersion = "";
+        if (!Configuration.get(Parameter.BROWSER_VERSION).isEmpty()) {
+            // default "browser_version=value" should be used to determine current browser
+            browserVersion = Configuration.get(Parameter.BROWSER_VERSION);
+        }
+
+        // redefine browserVersion if capabilities.browserVersion is available
+        if (!R.CONFIG.get("capabilities.browserVersion").isEmpty()  && !"null".equalsIgnoreCase(R.CONFIG.get("capabilities.browserVersion"))) {
+            browserVersion = R.CONFIG.get("capabilities.browserVersion");
+        }
+        
+        // read from actual_browser_version if specified
+        if (R.CONFIG.containsKey(SpecialKeywords.ACTUAL_BROWSER_VERSION)) {
+            browserVersion = R.CONFIG.get(SpecialKeywords.ACTUAL_BROWSER_VERSION);
+        }
+        
+        return browserVersion;
     }
 
     public static String getDriverType() {
 
         String platform = getPlatform();
-        if (platform.equalsIgnoreCase(SpecialKeywords.ANDROID) || platform.equalsIgnoreCase(SpecialKeywords.IOS)) {
-        	LOGGER.debug("Detected MOBILE driver_type by platform: " + platform);
+        if (platform.equalsIgnoreCase(SpecialKeywords.ANDROID) || platform.equalsIgnoreCase(SpecialKeywords.IOS) || platform.equalsIgnoreCase(SpecialKeywords.TVOS)) {
             return SpecialKeywords.MOBILE;
         }
+        
+        if (SpecialKeywords.WINDOWS.equalsIgnoreCase(platform)) {
+            return SpecialKeywords.WINDOWS;
+        }
 
-        LOGGER.debug("Return default DESKTOP driver_type");
         return SpecialKeywords.DESKTOP;
     }
 
     public static String getDriverType(DesiredCapabilities capabilities) {
-    	if (capabilities == null) {
-    		//calculate driver type based on config.properties arguments
-    		return getDriverType();
-    	}
-    	
-    	LOGGER.debug("Detecting driver_type by capabilities: " + capabilities);
-    	String platform = "";
-    	if (capabilities.getCapability("platform") != null) {
-    		platform = capabilities.getCapability("platform").toString();
-    	}
-    	
-    	if (capabilities.getCapability("platformName") != null) {
-    		platform = capabilities.getCapability("platformName").toString();
-    	}
-    	
-        if (SpecialKeywords.ANDROID.equalsIgnoreCase(platform) || SpecialKeywords.IOS.equalsIgnoreCase(platform)) {
-        	LOGGER.debug("Detected MOBILE driver_type by platform: " + platform);
+        if (capabilities == null) {
+            // calculate driver type based on config.properties arguments
+            return getDriverType();
+        }
+
+        String platform = "";
+        if (capabilities.getCapability("platform") != null) {
+            platform = capabilities.getCapability("platform").toString();
+        }
+
+        if (capabilities.getCapability("platformName") != null) {
+            platform = capabilities.getCapability("platformName").toString();
+        }
+
+        if (SpecialKeywords.ANDROID.equalsIgnoreCase(platform) || SpecialKeywords.IOS.equalsIgnoreCase(platform) || SpecialKeywords.TVOS.equalsIgnoreCase(platform)) {
             return SpecialKeywords.MOBILE;
         }
         
-        // handle use-case when we provide only uuid object among desired capabilities
-    	if (capabilities.getCapability("udid") != null) {
-    		LOGGER.debug("Detected MOBILE driver_type by uuid inside capabilities");
-    		return SpecialKeywords.MOBILE;
-    	}
+        if (SpecialKeywords.WINDOWS.equalsIgnoreCase(platform)) {
+            return SpecialKeywords.WINDOWS;
+        }
 
-    	LOGGER.debug("Return default DESKTOP driver_type");
+        // handle use-case when we provide only uuid object among desired capabilities
+        if (capabilities.getCapability("udid") != null) {
+            LOGGER.debug("Detected MOBILE driver_type by uuid inside capabilities");
+            return SpecialKeywords.MOBILE;
+        }
+
         return SpecialKeywords.DESKTOP;
     }
+
     public static String getMobileApp() {
         // redefine platform if capabilities.app is available
         String mobileApp = "";
@@ -467,8 +509,8 @@ public class Configuration {
         R.CONFIG.put(SpecialKeywords.CAPABILITIES + ".app", mobileApp);
         LOGGER.info("Updated mobile app: " + mobileApp);
     }
-    
+
     public static Object getCapability(String name) {
-    		return R.CONFIG.get("capabilities." + name);
+        return R.CONFIG.get("capabilities." + name);
     }
 }

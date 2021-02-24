@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,9 @@ package com.qaprosoft.carina.core.foundation.exception;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
+
+import com.qaprosoft.carina.core.foundation.commons.SpecialKeywords;
+import com.qaprosoft.carina.core.foundation.utils.R;
 
 public class ExceptionsTest {
 
@@ -142,6 +145,16 @@ public class ExceptionsTest {
             throw new TestCreationException();
         } catch (TestCreationException e) {
             Assert.assertTrue(e.getMessage().equals("Test creation exception"));
+        }
+    }
+    
+    @Test
+    public void testNotImplementedException() {
+        try {
+            R.CONFIG.put(SpecialKeywords.PLATFORM, "iOS", true);
+            throw new NotImplementedException();
+        } catch (Exception e) {
+            Assert.assertEquals(e.getMessage(), "Method [testNotImplementedException] isn't implemented for iOS!");
         }
     }
 

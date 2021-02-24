@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,14 +15,14 @@
  *******************************************************************************/
 package com.qaprosoft.carina.core.foundation.utils.common;
 
-import org.apache.log4j.Logger;
+import java.lang.invoke.MethodHandles;
 
-import com.qaprosoft.carina.core.foundation.performance.ACTION_NAME;
-import com.qaprosoft.carina.core.foundation.performance.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CommonUtils {
 
-    private static final Logger LOGGER = Logger.getLogger(CommonUtils.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     
     private CommonUtils() {
     	//hide public constructor
@@ -34,7 +34,6 @@ public class CommonUtils {
      * @param timeout Number
      */
     public static void pause(Number timeout) {
-    	Timer.start(ACTION_NAME.PAUSE);
         LOGGER.debug(String.format("Will wait for %s seconds", timeout));
         try {
             Float timeoutFloat = timeout.floatValue() * 1000;
@@ -44,6 +43,5 @@ public class CommonUtils {
             // do nothing
         }
         LOGGER.debug("Pause is overed. Keep going..");
-        Timer.stop(ACTION_NAME.PAUSE);
     }
 }

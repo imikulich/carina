@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,7 +35,8 @@ public @interface DeviceType {
         IOS_TABLET("ios_tablet", "ios"),
         IOS_PHONE(
                 "ios_phone",
-                "ios");
+                "ios"),
+        APPLE_TV("apple_tv", "tvos");
 
         private String type;
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  *******************************************************************************/
 package com.qaprosoft.carina.browsermobproxy;
 
-import org.apache.log4j.Logger;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeClass;
@@ -27,7 +26,6 @@ import com.qaprosoft.carina.proxy.SystemProxy;
 import net.lightbody.bmp.BrowserMobProxy;
 
 public class BrowserMobPortsRangeTest {
-    private static final Logger LOGGER = Logger.getLogger(BrowserMobPortsRangeTest.class);
     private static String header = "my_header";
     private static String headerValue = "my_value";
 
@@ -53,6 +51,7 @@ public class BrowserMobPortsRangeTest {
     }
 
     private void initialize() {
+    	ProxyPool.initProxyPortsRange();
         ProxyPool.setupBrowserMobProxy();
         SystemProxy.setupProxy();
 

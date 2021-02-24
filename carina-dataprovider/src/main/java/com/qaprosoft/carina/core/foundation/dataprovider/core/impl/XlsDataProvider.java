@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright 2013-2019 QaProSoft (http://www.qaprosoft.com).
+ * Copyright 2013-2020 QaProSoft (http://www.qaprosoft.com).
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import java.lang.annotation.Annotation;
 import java.util.Arrays;
 import java.util.Map;
 
-import com.qaprosoft.carina.core.foundation.dataprovider.parser.SpreadsheetParser;
 import org.testng.ITestContext;
 import org.testng.ITestNGMethod;
 
@@ -30,7 +29,6 @@ import com.qaprosoft.carina.core.foundation.dataprovider.parser.DSBean;
 import com.qaprosoft.carina.core.foundation.dataprovider.parser.XLSParser;
 import com.qaprosoft.carina.core.foundation.dataprovider.parser.XLSTable;
 import com.qaprosoft.carina.core.foundation.utils.ParameterGenerator;
-import com.qaprosoft.carina.core.foundation.utils.naming.TestNamingUtil;
 
 /**
  * Created by Patotsky on 16.12.2014.
@@ -46,9 +44,7 @@ public class XlsDataProvider extends BaseDataProvider {
         DSBean dsBean = new DSBean(parameters, context
                 .getCurrentXmlTest().getAllParameters());
 
-        XLSTable dsData = dsBean.isSpreadsheet() ?
-                SpreadsheetParser.parseSpreadSheet(dsBean.getDsFile(), dsBean.getXlsSheet(), dsBean.getExecuteColumn(), dsBean.getExecuteValue()) :
-                XLSParser.parseSpreadSheet(dsBean.getDsFile(), dsBean.getXlsSheet(), dsBean.getExecuteColumn(), dsBean.getExecuteValue());
+        XLSTable dsData = XLSParser.parseSpreadSheet(dsBean.getDsFile(), dsBean.getXlsSheet(), dsBean.getExecuteColumn(), dsBean.getExecuteValue());
 
         argsList = dsBean.getArgs();
         staticArgsList = dsBean.getStaticArgs();
@@ -136,13 +132,10 @@ public class XlsDataProvider extends BaseDataProvider {
             // update testName adding UID values from DataSource arguments if any
             testName = dsBean.setDataSorceUUID(testName, xlsRow);
 
-            canonicalTestNameArgsMap.put(String.valueOf(Arrays.hashCode(args[rowIndex])), TestNamingUtil.appendTestMethodName(testName, testMethod));
-            if (testMethodColumn.isEmpty()) {
-                testNameArgsMap.put(String.valueOf(Arrays.hashCode(args[rowIndex])), testName);
-            } else {
-                // add testName value from xls datasource to special hashMap
+            testNameArgsMap.put(String.valueOf(Arrays.hashCode(args[rowIndex])), testName);
+            if (!testMethodColumn.isEmpty()) {
+                // override testName value from xls datasource to special hashMap
                 addValueToSpecialMap(testNameArgsMap, testMethodColumn, String.valueOf(Arrays.hashCode(args[rowIndex])), xlsRow);
-                addValueToSpecialMap(testMethodNameArgsMap, testMethodColumn, String.valueOf(Arrays.hashCode(args[rowIndex])), xlsRow);
             }
 
             // add testMethoOwner from xls datasource to special hashMap
